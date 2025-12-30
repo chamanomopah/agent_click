@@ -14,6 +14,7 @@ class AgentSettings:
     """Settings for a specific agent."""
     context_folder: Optional[str] = None
     focus_file: Optional[str] = None
+    output_mode: str = "AUTO"
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -24,7 +25,8 @@ class AgentSettings:
         """Create from dictionary."""
         return cls(
             context_folder=data.get('context_folder'),
-            focus_file=data.get('focus_file')
+            focus_file=data.get('focus_file'),
+            output_mode=data.get('output_mode', 'AUTO')
         )
 
 
@@ -158,3 +160,36 @@ class AgentConfigManager:
         """
         settings = self.get_settings(agent_name)
         return settings.focus_file
+
+    def set_output_mode(self, agent_name: str, mode: str) -> None:
+        """Set output mode for an agent.
+
+        Args:
+            agent_name: Name of the agent
+            mode: Output mode string (AUTO, CLIPBOARD_PURE, etc.)
+        """
+        from agents.output_modes import OutputMode
+
+        # Validate mode
+        try:
+            OutputMode.from_string(mode)
+        except ValueError as e:
+            logger.error(f"Invalid output mode: {mode}")
+            raise ValueError(f"Invalid output mode: {mode}. Must be one of: {[m.value for m in OutputMode]}")
+
+        settings = self.get_settings(agent_name)
+        settings.output_mode = mode
+        self._save()
+        logger.info(f"Set output mode for {agent_name}: {mode}")
+
+    def get_output_mode(self, agent_name: str) -> str:
+        """Get output mode for an agent.
+
+        Args:
+            agent_name: Name of the agent
+
+        Returns:
+            Output mode string
+        """
+        settings = self.get_settings(agent_name)
+        return settings.output_mode

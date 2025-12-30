@@ -5,12 +5,13 @@ Minimalist popup showing agent status and activity log.
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton,
-    QLineEdit, QHBoxLayout, QFileDialog, QTabWidget, QGroupBox, QFormLayout
+    QLineEdit, QHBoxLayout, QFileDialog, QTabWidget, QGroupBox, QFormLayout, QComboBox
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QTextCursor
 from typing import Optional
 from agents.base_agent import BaseAgent
+from agents.output_modes import OutputMode
 from config.agent_config import AgentConfigManager, AgentSettings
 from utils.logger import setup_logger
 
@@ -268,6 +269,39 @@ class PopupWindow(QWidget):
 
         config_form.addRow("Focus File:", focus_layout)
 
+        # Output Mode
+        output_mode_label = QLabel("Output Mode:")
+        output_mode_label.setStyleSheet("""
+            QLabel {
+                font-size: 11px;
+                font-weight: bold;
+                color: #333333;
+            }
+        """)
+
+        self.output_mode_combo = QComboBox()
+        self.output_mode_combo.setStyleSheet("""
+            QComboBox {
+                padding: 5px;
+                border: 1px solid #cccccc;
+                border-radius: 3px;
+                background-color: white;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+        """)
+
+        # Add all output modes
+        for mode in OutputMode:
+            self.output_mode_combo.addItem(mode.display_name, mode.value)
+
+        config_form.addRow(output_mode_label, self.output_mode_combo)
+
         config_group.setLayout(config_form)
         config_layout.addWidget(config_group)
 
@@ -275,7 +309,14 @@ class PopupWindow(QWidget):
         info_label = QLabel(
             "💡 These settings configure how the agent processes:\n"
             "• Context Folder: Project folder the agent can work in\n"
-            "• Focus File: Specific file that provides project context"
+            "• Focus File: Specific file that provides project context\n"
+            "• Output Mode: How the agent delivers results\n\n"
+            "📋 Output Modes:\n"
+            "  🤖 Auto: Agent decides best output\n"
+            "  📋 Pure: Raw content to clipboard\n"
+            "  📋 Rich: Formatted content with reasoning\n"
+            "  💾 File: Save to project folder\n"
+            "  ✏️ Editor: Preview & edit before output"
         )
         info_label.setStyleSheet("""
             QLabel {
@@ -347,16 +388,24 @@ class PopupWindow(QWidget):
         if settings.focus_file:
             self.focus_file_edit.setText(settings.focus_file)
 
+        # Load output mode
+        if settings.output_mode:
+            mode_index = self.output_mode_combo.findData(settings.output_mode)
+            if mode_index >= 0:
+                self.output_mode_combo.setCurrentIndex(mode_index)
+
         self.logger.info(f"Loaded config for {self.current_agent.metadata.name}")
 
     def _save_config(self):
         """Save configuration for current agent."""
         context_folder = self.context_folder_edit.text().strip() or None
         focus_file = self.focus_file_edit.text().strip() or None
+        output_mode = self.output_mode_combo.currentData()
 
         settings = AgentSettings(
             context_folder=context_folder,
-            focus_file=focus_file
+            focus_file=focus_file,
+            output_mode=output_mode
         )
 
         self.config_manager.update_settings(

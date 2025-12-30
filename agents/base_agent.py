@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from claude_agent_sdk import query, ClaudeAgentOptions
 from config.sdk_config import create_sdk_options
 from utils.logger import setup_logger
@@ -44,19 +44,23 @@ class BaseAgent(ABC):
         """
         pass
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO"):
         """Process text with this agent.
 
         Args:
             text: Text to process
             context_folder: Optional context folder path
             focus_file: Optional focus file path
+            output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
 
         Returns:
-            Processed result
+            AgentResult with content and metadata
         """
+        from agents.output_modes import OutputMode, AgentResult
+
         self.logger.info(f"Processing with {self.metadata.name}")
         self.logger.debug(f"Input text: {text[:100]}...")
+        self.logger.info(f"Output mode: {output_mode}")
 
         if context_folder:
             self.logger.info(f"Context folder: {context_folder}")
@@ -74,12 +78,87 @@ class BaseAgent(ABC):
             # Query Claude SDK
             result_text = self._query_sdk(prompt, options)
 
+            # Parse output to extract thoughts and content (if formatted)
+            content, raw_thoughts = self._parse_output(result_text)
+
+            # Generate suggested filename based on task
+            suggested_filename = self._generate_filename(text, context_folder)
+
             self.logger.info(f"Processing complete: {len(result_text)} chars")
-            return result_text
+
+            # Create structured result
+            result = AgentResult(
+                content=content,
+                output_mode=OutputMode.from_string(output_mode),
+                metadata={
+                    "agent": self.metadata.name,
+                    "context_folder": context_folder,
+                    "focus_file": focus_file
+                },
+                raw_thoughts=raw_thoughts,
+                suggested_filename=suggested_filename
+            )
+
+            return result
 
         except Exception as e:
             self.logger.error(f"Error processing: {e}", exc_info=True)
             raise
+
+
+    def _parse_output(self, output: str) -> Tuple[str, Optional[str]]:
+        """Parse output to extract thoughts and main content.
+
+        Args:
+            output: Raw output from SDK
+
+        Returns:
+            Tuple of (content, thoughts) where thoughts may be None
+        """
+        # Check if output has thought markers (---, ###, etc)
+        separators = ["\n---\n", "\n\n### Reasoning", "\n\n## Thoughts"]
+
+        for sep in separators:
+            if sep in output:
+                parts = output.split(sep, 1)
+                if len(parts) == 2:
+                    # First part is content, second is thoughts (or vice versa)
+                    # Usually: content first, then thoughts
+                    return parts[0].strip(), parts[1].strip()
+
+        # No separation found
+        return output.strip(), None
+
+
+    def _generate_filename(self, task: str, context_folder: Optional[str]) -> Optional[str]:
+        """Generate suggested filename based on task.
+
+        Args:
+            task: Task description
+            context_folder: Optional context folder
+
+        Returns:
+            Suggested filename or None
+        """
+        task_lower = task.lower()
+
+        # Detect task type and generate appropriate filename
+        if "json" in task_lower:
+            return "output.json"
+        elif "config" in task_lower or "yaml" in task_lower:
+            return "config.yaml"
+        elif "markdown" in task_lower or "md" in task_lower:
+            return "output.md"
+        elif "python" in task_lower or ".py" in task_lower:
+            return "script.py"
+        elif "javascript" in task_lower or ".js" in task_lower:
+            return "script.js"
+        elif "readme" in task_lower:
+            return "README.md"
+        elif "test" in task_lower:
+            return "test_output.txt"
+
+        return None
 
     def _build_prompt(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None) -> str:
         """Build prompt for Claude SDK.

@@ -7,8 +7,10 @@ from typing import Optional, Dict, Any
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 from agents.base_agent import BaseAgent
 from agents.agent_registry import AgentRegistry
+from agents.output_modes import AgentResult
 from core.click_processor import ClickProcessor
 from core.selection_manager import SelectionManager
+from core.output_handler import OutputHandler
 from ui.popup_window import PopupWindow
 from ui.mini_popup import MiniPopupWidget
 from config.agent_config import AgentConfigManager
@@ -46,6 +48,7 @@ class AgentClickSystem:
         self.click_processor = ClickProcessor()
         self.agent_registry = AgentRegistry()
         self.config_manager = AgentConfigManager()
+        self.output_handler = OutputHandler(self.selection_manager)
 
         # Get initial agent
         initial_agent = self.agent_registry.get_current_agent()
@@ -88,14 +91,21 @@ class AgentClickSystem:
         agent_name = current_agent.metadata.name
         context_folder = self.config_manager.get_context_folder(agent_name)
         focus_file = self.config_manager.get_focus_file(agent_name)
+        output_mode = self.config_manager.get_output_mode(agent_name)
 
         logger.info(f"Processing with {current_agent.metadata.name}...")
+        logger.info(f"Output mode: {output_mode}")
         if context_folder or focus_file:
             logger.info(f"Using config - Folder: {context_folder}, File: {focus_file}")
 
         # Process with agent (this happens in keyboard thread)
         try:
-            result = current_agent.process(selected_text, context_folder, focus_file)
+            result = current_agent.process(
+                selected_text,
+                context_folder,
+                focus_file,
+                output_mode
+            )
             self._handle_result(result, current_agent)
         except Exception as e:
             error_msg = f"Error processing: {str(e)}"
@@ -152,33 +162,44 @@ class AgentClickSystem:
         if self.large_popup:
             self.large_popup.log(message, level)
 
-    def _handle_result(self, result: str, agent: BaseAgent) -> None:
+    def _handle_result(self, result: AgentResult, agent: BaseAgent) -> None:
         """Handle agent processing result.
 
         Args:
-            result: Result text from agent
+            result: AgentResult from agent
             agent: Agent that processed the request
         """
-        if result:
-            logger.info("Processing complete")
-            logger.info("Copying to clipboard...")
+        from agents.output_modes import OutputMode
 
-            if self.selection_manager.copy_to_clipboard(result):
-                logger.info(f"Result copied to clipboard ({len(result)} chars)")
-
-                # Log to large popup only if it's open
-                if self.large_popup:
-                    self.signals.log_message_signal.emit("✅ Processing complete", "success")
-                    self.signals.log_message_signal.emit("📋 Copying to clipboard...", "info")
-                    self.signals.log_message_signal.emit("✅ Copied to clipboard", "success")
-            else:
-                logger.warning("Failed to copy to clipboard")
-                if self.large_popup:
-                    self.signals.log_message_signal.emit("⚠️ Failed to copy", "warning")
-        else:
+        if not result.content:
             logger.warning("Agent returned empty result")
             if self.large_popup:
                 self.signals.log_message_signal.emit("⚠️ No result generated", "warning")
+            return
+
+        logger.info("Processing complete...")
+
+        # Handle based on output mode
+        success = self.output_handler.handle(result, result.metadata.get('context_folder'))
+
+        if success:
+            mode = result.output_mode
+            if mode == OutputMode.FILE:
+                logger.info("✅ Output saved to file")
+                if self.large_popup:
+                    self.signals.log_message_signal.emit("✅ Saved to file", "success")
+            elif mode == OutputMode.INTERACTIVE_EDITOR:
+                logger.info("✅ Interactive editor completed")
+                if self.large_popup:
+                    self.signals.log_message_signal.emit("✅ Editor completed", "success")
+            else:
+                logger.info("✅ Copied to clipboard")
+                if self.large_popup:
+                    self.signals.log_message_signal.emit("✅ Copied to clipboard", "success")
+        else:
+            logger.error("❌ Failed to handle output")
+            if self.large_popup:
+                self.signals.log_message_signal.emit("❌ Output failed", "error")
 
     def run(self) -> None:
         """Run the system (Qt event loop handles main loop)."""
