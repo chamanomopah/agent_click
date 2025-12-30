@@ -367,6 +367,7 @@ class PopupWindow(QWidget):
         input_options = [
             ("Text Selection (clipboard)", InputType.TEXT_SELECTION.value),
             ("Selected Text (mouse)", InputType.SELECTED_TEXT.value),
+            ("VSCode Active File", InputType.VSCODE_ACTIVE_FILE.value),
             ("File Upload (drag & drop)", InputType.FILE_UPLOAD.value),
             ("Clipboard Image", InputType.CLIPBOARD_IMAGE.value),
             ("Screenshot (Ctrl+Shift+Pause)", InputType.SCREENSHOT.value)

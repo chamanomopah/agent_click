@@ -31,12 +31,13 @@ class AgentSettings:
     focus_file: Optional[str] = None
     output_mode: str = "AUTO"
     allowed_inputs: list[str] = None  # NOVO: List of allowed input types
+    verbose_logging: bool = False  # NOVO: Enable verbose SDK logging
 
     def __post_init__(self):
         """Initialize allowed_inputs with defaults if not provided."""
         if self.allowed_inputs is None:
             # Default: all input types allowed
-            self.allowed_inputs = ["text_selection", "file_upload", "clipboard_image", "screenshot"]
+            self.allowed_inputs = ["text_selection", "selected_text", "vscode_active_file", "file_upload", "clipboard_image", "screenshot"]
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -49,7 +50,8 @@ class AgentSettings:
             context_folder=data.get('context_folder'),
             focus_file=data.get('focus_file'),
             output_mode=data.get('output_mode', 'AUTO'),
-            allowed_inputs=data.get('allowed_inputs', ["text_selection", "file_upload", "clipboard_image", "screenshot"])
+            allowed_inputs=data.get('allowed_inputs', ["text_selection", "selected_text", "vscode_active_file", "file_upload", "clipboard_image", "screenshot"]),
+            verbose_logging=data.get('verbose_logging', False)
         )
 
 
@@ -298,3 +300,27 @@ class AgentConfigManager:
             logger.info(f"Enabled input '{input_type}' for {agent_name}")
 
         self._save()
+
+    def get_verbose_logging(self, agent_name: str) -> bool:
+        """Get verbose logging setting for an agent.
+
+        Args:
+            agent_name: Name of the agent
+
+        Returns:
+            True if verbose logging is enabled
+        """
+        settings = self.get_settings(agent_name)
+        return settings.verbose_logging
+
+    def set_verbose_logging(self, agent_name: str, enabled: bool) -> None:
+        """Set verbose logging for an agent.
+
+        Args:
+            agent_name: Name of the agent
+            enabled: Whether to enable verbose logging
+        """
+        settings = self.get_settings(agent_name)
+        settings.verbose_logging = enabled
+        self._save()
+        logger.info(f"Set verbose logging for {agent_name}: {enabled}")

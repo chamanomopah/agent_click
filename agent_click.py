@@ -6,6 +6,7 @@
 #     "keyboard",
 #     "pyperclip",
 #     "PyQt6",
+#     "pywin32",
 # ]
 # ///
 

@@ -5,6 +5,46 @@
     "output_mode": "PASTE_TEXT",
     "allowed_inputs": [
       "selected_text"
-    ]
+    ],
+    "verbose_logging": false
+  },
+  "TAC Chore Planner": {
+    "context_folder": "C:/.agent_click",
+    "focus_file": "C:/.agent_click/README.md",
+    "output_mode": "FILE",
+    "allowed_inputs": [
+      "selected_text"
+    ],
+    "verbose_logging": false
+  },
+  "TAC Feature Planner": {
+    "context_folder": "C:/.agent_click",
+    "focus_file": "C:/.agent_click/README.md",
+    "output_mode": "FILE",
+    "allowed_inputs": [
+      "selected_text"
+    ],
+    "verbose_logging": false
+  },
+  "TAC Implementer": {
+    "context_folder": "C:/.agent_click",
+    "focus_file": "C:/.agent_click/README.md",
+    "output_mode": "AUTO",
+    "allowed_inputs": [
+      "vscode_active_file"
+    ],
+    "verbose_logging": false
+  },
+  "TAC Bug Planner": {
+    "context_folder": null,
+    "focus_file": null,
+    "output_mode": "AUTO",
+    "allowed_inputs": [
+      "text_selection",
+      "file_upload",
+      "clipboard_image",
+      "screenshot"
+    ],
+    "verbose_logging": false
   }
 }

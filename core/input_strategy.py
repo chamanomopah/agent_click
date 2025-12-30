@@ -19,6 +19,7 @@ class InputType(Enum):
     CLIPBOARD_IMAGE = "clipboard_image"
     SCREENSHOT = "screenshot"
     SELECTED_TEXT = "selected_text"  # NOVO: Mouse selection without clipboard
+    VSCODE_ACTIVE_FILE = "vscode_active_file"  # NOVO: Reads active file from VSCode window
 
 
 @dataclass
@@ -61,6 +62,10 @@ class InputContent:
 
         elif self.input_type == InputType.SCREENSHOT:
             return f"[SCREENSHOT captured]\n{self.text or ''}"
+
+        elif self.input_type == InputType.VSCODE_ACTIVE_FILE:
+            filename = self.metadata.get("filename", "unknown") if self.metadata else "unknown"
+            return f"[VSCODE ACTIVE FILE: {filename}]\n{self.text or ''}"
 
         return ""
 

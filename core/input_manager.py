@@ -10,7 +10,8 @@ from core.input_strategies import (
     FileUploadStrategy,
     ClipboardImageStrategy,
     ScreenshotStrategy,
-    SelectedTextStrategy
+    SelectedTextStrategy,
+    VSCodeActiveFileStrategy
 )
 from utils.logger import setup_logger
 
@@ -35,6 +36,7 @@ class InputManager:
         self.strategies: List[InputStrategy] = [
             TextSelectionStrategy(),
             SelectedTextStrategy(),  # NOVO: Mouse selection without clipboard
+            VSCodeActiveFileStrategy(),  # NOVO: Reads active file from VSCode
             FileUploadStrategy(),  # Will be configured when file is dropped
             ClipboardImageStrategy(),
             ScreenshotStrategy()
@@ -86,6 +88,7 @@ class InputManager:
         priority_order = [
             InputType.TEXT_SELECTION,
             InputType.SELECTED_TEXT,  # NOVO: Try mouse selection before clipboard image
+            InputType.VSCODE_ACTIVE_FILE,  # NOVO: Try VSCode active file before file upload
             InputType.FILE_UPLOAD,
             InputType.CLIPBOARD_IMAGE,
         ]

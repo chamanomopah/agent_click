@@ -8,11 +8,13 @@ from .file_upload_strategy import FileUploadStrategy
 from .clipboard_image_strategy import ClipboardImageStrategy
 from .screenshot_strategy import ScreenshotStrategy
 from .selected_text_strategy import SelectedTextStrategy
+from .vscode_active_file_strategy import VSCodeActiveFileStrategy
 
 __all__ = [
     'TextSelectionStrategy',
     'FileUploadStrategy',
     'ClipboardImageStrategy',
     'ScreenshotStrategy',
-    'SelectedTextStrategy'
+    'SelectedTextStrategy',
+    'VSCodeActiveFileStrategy'
 ]

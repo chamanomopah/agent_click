@@ -115,13 +115,24 @@ The AgentClick system supports **multiple input types** for maximum flexibility:
 - **Captures:** Entire screen or active window
 - **Example:** Debug UI issue by taking screenshot
 
+### 5. 📝 VSCode Active File (NEW)
+- **How:** Have file open in VSCode → Press Pause
+- **Use case:** Quick analysis of file you're actively working on
+- **Works in:** VSCode only (Windows only)
+- **Requirements:** File must be saved to disk (not Untitled)
+- **Example:** Working on `app.py` in VSCode → Press Pause → Agent receives entire file
+- **Supported file types:** Text files, code files (Python, JS, JSON, YAML, etc.)
+- **Not supported:** Binary files, unsaved files, remote files (SSH/WSL)
+
 ### Input Type Priority (Auto-Detection)
 
 When you press Pause, the system automatically detects the best available input:
 1. **Text Selection** - If text in clipboard (most common)
-2. **File Upload** - If file was dragged to mini popup
-3. **Clipboard Image** - If image in clipboard
-4. **Screenshot** - Only when explicitly triggered (Ctrl+Shift+Pause)
+2. **Selected Text** - If text selected with mouse
+3. **VSCode Active File** - If VSCode is active window with a file
+4. **File Upload** - If file was dragged to mini popup
+5. **Clipboard Image** - If image in clipboard
+6. **Screenshot** - Only when explicitly triggered (Ctrl+Shift+Pause)
 
 ### Per-Agent Input Filtering
 
@@ -340,6 +351,9 @@ When processing with config:
 
 **Interface:**
 - `PyQt6` - Popup window GUI with tabs and file dialogs
+
+**System Integration:**
+- `pywin32` - Windows API access for VSCode window detection
 
 ### Design Patterns
 
