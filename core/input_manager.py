@@ -9,7 +9,8 @@ from core.input_strategies import (
     TextSelectionStrategy,
     FileUploadStrategy,
     ClipboardImageStrategy,
-    ScreenshotStrategy
+    ScreenshotStrategy,
+    SelectedTextStrategy
 )
 from utils.logger import setup_logger
 
@@ -33,6 +34,7 @@ class InputManager:
         """Initialize input manager with all strategies."""
         self.strategies: List[InputStrategy] = [
             TextSelectionStrategy(),
+            SelectedTextStrategy(),  # NOVO: Mouse selection without clipboard
             FileUploadStrategy(),  # Will be configured when file is dropped
             ClipboardImageStrategy(),
             ScreenshotStrategy()
@@ -83,6 +85,7 @@ class InputManager:
         # Auto-detect: try in priority order
         priority_order = [
             InputType.TEXT_SELECTION,
+            InputType.SELECTED_TEXT,  # NOVO: Try mouse selection before clipboard image
             InputType.FILE_UPLOAD,
             InputType.CLIPBOARD_IMAGE,
         ]

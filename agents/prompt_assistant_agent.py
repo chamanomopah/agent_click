@@ -61,17 +61,19 @@ The user's original input will be provided - transform it into an excellent prom
 
         return base_prompt
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None) -> str:
         """Process text with prompt assistant.
 
         Args:
             text: User's original prompt
             context_folder: Optional context folder
             focus_file: Optional focus file
+            output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
+            image_path: Optional image path for visual analysis
 
         Returns:
             Refined, expanded prompt
         """
         self.logger.info("Prompt Assistant: Refining prompt")
-        result = super().process(text, context_folder, focus_file)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path)
         return result

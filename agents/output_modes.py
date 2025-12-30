@@ -26,6 +26,9 @@ class OutputMode(Enum):
     INTERACTIVE_EDITOR = "INTERACTIVE_EDITOR"
     """Open preview window for editing before finalizing output."""
 
+    PASTE_TEXT = "PASTE_TEXT"
+    """Paste text at current cursor insertion point."""
+
 
     @property
     def display_name(self) -> str:
@@ -35,7 +38,8 @@ class OutputMode(Enum):
             OutputMode.CLIPBOARD_PURE: "📋 Clipboard (Pure)",
             OutputMode.CLIPBOARD_RICH: "📋 Clipboard (Rich)",
             OutputMode.FILE: "💾 Save to File",
-            OutputMode.INTERACTIVE_EDITOR: "✏️ Interactive Editor"
+            OutputMode.INTERACTIVE_EDITOR: "✏️ Interactive Editor",
+            OutputMode.PASTE_TEXT: "📝 Paste Text (at cursor)"
         }
         return display_map.get(self, self.value)
 
@@ -48,7 +52,8 @@ class OutputMode(Enum):
             OutputMode.CLIPBOARD_PURE: "Raw content without formatting or metadata",
             OutputMode.CLIPBOARD_RICH: "Formatted content with markdown structure",
             OutputMode.FILE: "Automatically save to file in project folder",
-            OutputMode.INTERACTIVE_EDITOR: "Preview and edit before final output"
+            OutputMode.INTERACTIVE_EDITOR: "Preview and edit before final output",
+            OutputMode.PASTE_TEXT: "Paste text directly at cursor insertion point"
         }
         return desc_map.get(self, "")
 

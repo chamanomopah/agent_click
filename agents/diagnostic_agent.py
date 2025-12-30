@@ -64,17 +64,19 @@ IMPORTANT:
 
         return base_prompt
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None) -> str:
         """Process problem description.
 
         Args:
             text: Problem description
             context_folder: Optional context folder
             focus_file: Optional focus file
+            output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
+            image_path: Optional image path for visual analysis
 
         Returns:
             Detailed diagnosis and implementation plan
         """
         self.logger.info("Diagnostic Agent: Analyzing problem")
-        result = super().process(text, context_folder, focus_file)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path)
         return result

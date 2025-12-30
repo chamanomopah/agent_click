@@ -255,16 +255,19 @@ introducing new ones or breaking existing functionality.
         return base_prompt
 
     def process(self, text: str, context_folder: Optional[str] = None,
-               focus_file: Optional[str] = None) -> str:
+               focus_file: Optional[str] = None, output_mode: str = "AUTO",
+               image_path: Optional[str] = None) -> str:
         """Process text with this agent.
 
         Args:
             text: Text to process
             context_folder: Optional context folder path
             focus_file: Optional focus file path
+            output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
+            image_path: Optional image path for visual analysis
 
         Returns:
             AgentResult with content and metadata
         """
         # Use base class implementation that calls Claude SDK
-        return super().process(text, context_folder, focus_file)
+        return super().process(text, context_folder, focus_file, output_mode, image_path)

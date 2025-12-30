@@ -27,6 +27,7 @@ class SystemSignals(QObject):
     update_mini_popup_signal = pyqtSignal(object)  # Update mini popup icon
     update_large_popup_agent_signal = pyqtSignal(object)  # Update large popup agent
     log_message_signal = pyqtSignal(str, str)  # message, level
+    show_interactive_editor_signal = pyqtSignal(object, object)  # result, context_folder - Open interactive editor in main thread
 
 
 class AgentClickSystem:
@@ -44,6 +45,7 @@ class AgentClickSystem:
         self.signals.update_mini_popup_signal.connect(self._update_mini_popup_in_main_thread)
         self.signals.update_large_popup_agent_signal.connect(self._update_large_popup_agent_in_main_thread)
         self.signals.log_message_signal.connect(self._log_in_main_thread)
+        self.signals.show_interactive_editor_signal.connect(self._show_interactive_editor_in_main_thread)  # NOVO: Interactive editor thread-safe
 
         # Initialize components
         self.input_manager = InputManager()  # NOVO: Gerenciador de múltiplos inputs
@@ -51,7 +53,7 @@ class AgentClickSystem:
         self.click_processor = ClickProcessor()
         self.agent_registry = AgentRegistry()
         self.config_manager = AgentConfigManager()
-        self.output_handler = OutputHandler(self.selection_manager)
+        self.output_handler = OutputHandler(self.selection_manager, self.signals)  # NOVO: Pass signals for thread-safe GUI
 
         # Get initial agent
         initial_agent = self.agent_registry.get_current_agent()
@@ -219,14 +221,25 @@ class AgentClickSystem:
 
         # Get agent configuration
         agent_name = current_agent.metadata.name
-        allowed_inputs = self.config_manager.get_allowed_inputs(agent_name)  # NOVO
+        allowed_inputs = self.config_manager.get_allowed_inputs(agent_name)
 
-        # NOVO: Check if input type is allowed
+        # Check if input type is allowed
         if input_type.value not in allowed_inputs:
-            logger.warning(f"Input type {input_type.value} not allowed for {agent_name}")
+            # Get friendly name for the input type
+            from core.input_strategy import InputType
+            input_friendly_name = input_type.value.replace("_", " ").title()
+
+            # Build clear error message
+            error_msg = (
+                f"⚠️  Input type '{input_friendly_name}' is not selected for agent '{agent_name}'.\n"
+                f"   Please select '{input_friendly_name}' as the Input option in the agent configuration."
+            )
+
+            logger.warning(error_msg.replace("⚠️  ", "").strip())
+
             if self.large_popup:
                 self.signals.log_message_signal.emit(
-                    f"⚠️  Input type '{input_type.value}' not allowed for this agent",
+                    error_msg,
                     "warning"
                 )
             return
@@ -314,6 +327,41 @@ class AgentClickSystem:
         """Log message in large popup GUI (called in main thread via signal)."""
         if self.large_popup:
             self.large_popup.log(message, level)
+
+    def _show_interactive_editor_in_main_thread(self, result: AgentResult, context_folder: Optional[str]) -> None:
+        """Show interactive editor dialog in main thread (called via signal for thread safety)."""
+        from core.interactive_editor import InteractiveEditorDialog
+
+        try:
+            # Create dialog (now in Qt main thread - safe!)
+            dialog = InteractiveEditorDialog(result, context_folder)
+
+            # Show dialog (blocking in main thread)
+            dialog.exec()
+
+            # Check if user confirmed
+            if dialog.was_confirmed():
+                final_result = dialog.get_final_result()
+                self.logger.info("✅ Interactive editor confirmed")
+
+                # Handle based on user's final choice
+                if dialog.get_final_action() == "file":
+                    self.output_handler._handle_file(final_result, context_folder)
+                else:
+                    self.output_handler._handle_clipboard_pure(final_result)
+
+                # Show success message
+                if self.large_popup:
+                    self.signals.log_message_signal.emit("✅ Interactive editor completed", "success")
+            else:
+                self.logger.info("❌ Interactive editor cancelled")
+                if self.large_popup:
+                    self.signals.log_message_signal.emit("❌ Editor cancelled", "warning")
+
+        except Exception as e:
+            self.logger.error(f"❌ Error in interactive editor: {e}", exc_info=True)
+            if self.large_popup:
+                self.signals.log_message_signal.emit(f"❌ Error: {str(e)}", "error")
 
     def _handle_result(self, result: AgentResult, agent: BaseAgent) -> None:
         """Handle agent processing result.

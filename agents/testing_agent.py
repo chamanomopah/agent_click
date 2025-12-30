@@ -64,17 +64,19 @@ IMPORTANT:
 
         return base_prompt
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None) -> str:
         """Process code/requirements and generate tests.
 
         Args:
             text: Code, feature, or requirements to test
             context_folder: Optional context folder
             focus_file: Optional focus file
+            output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
+            image_path: Optional image path for visual analysis
 
         Returns:
             Comprehensive test plan and test cases
         """
         self.logger.info("Testing Agent: Generating test plan")
-        result = super().process(text, context_folder, focus_file)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path)
         return result

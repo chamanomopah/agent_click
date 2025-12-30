@@ -18,6 +18,7 @@ class InputType(Enum):
     FILE_UPLOAD = "file_upload"
     CLIPBOARD_IMAGE = "clipboard_image"
     SCREENSHOT = "screenshot"
+    SELECTED_TEXT = "selected_text"  # NOVO: Mouse selection without clipboard
 
 
 @dataclass
@@ -45,6 +46,9 @@ class InputContent:
         """
         if self.input_type == InputType.TEXT_SELECTION:
             return self.text or ""
+
+        elif self.input_type == InputType.SELECTED_TEXT:
+            return f"[SELECTED TEXT]\n{self.text or ''}"
 
         elif self.input_type == InputType.FILE_UPLOAD:
             file_info = ""

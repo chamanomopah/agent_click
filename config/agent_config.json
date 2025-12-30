@@ -1,8 +1,16 @@
 {
   "Diagnostic Agent": {
-    "context_folder": "C:/.agent_click",
-    "focus_file": "C:/.agent_click/agent_click.py",
-    "output_mode": "FILE",
+    "context_folder": null,
+    "focus_file": null,
+    "output_mode": "INTERACTIVE_EDITOR",
+    "allowed_inputs": [
+      "text_selection"
+    ]
+  },
+  "Implementation Agent": {
+    "context_folder": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure",
+    "focus_file": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure/README.md",
+    "output_mode": "AUTO",
     "allowed_inputs": [
       "text_selection",
       "file_upload",
@@ -10,9 +18,26 @@
       "screenshot"
     ]
   },
-  "Implementation Agent": {
-    "context_folder": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure",
-    "focus_file": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure/README.md",
+  "Debug AgentClick": {
+    "context_folder": null,
+    "focus_file": null,
+    "output_mode": "AUTO",
+    "allowed_inputs": [
+      "text_selection",
+      "screenshot"
+    ]
+  },
+  "Prompt Assistant": {
+    "context_folder": null,
+    "focus_file": null,
+    "output_mode": "CLIPBOARD_PURE",
+    "allowed_inputs": [
+      "text_selection"
+    ]
+  },
+  "Testing Assistant Agent": {
+    "context_folder": null,
+    "focus_file": null,
     "output_mode": "AUTO",
     "allowed_inputs": [
       "text_selection",

@@ -1,8 +1,8 @@
-# AgentClick System v1.0
+# AgentClick System v1.1
 
-Multi-agent system with dual popup interface - mini indicator always visible, detailed view on demand, and per-agent configuration management.
+Multi-agent system with dual popup interface, multiple input types (text, file, image, screenshot), per-agent configuration management, and intelligent input filtering.
 
-**What it does:** Mini popup shows agent → Click to configure/use → Select text → Press Pause → Agent processes with custom context → Result copied to clipboard.
+**What it does:** Mini popup shows agent → Click to configure/use → Provide input (text/file/image/screenshot) → Press Pause → Agent processes with custom context → Result delivered based on Output Mode setting.
 
 ## Features
 
@@ -11,11 +11,12 @@ Multi-agent system with dual popup interface - mini indicator always visible, de
 - 🖥️ **Detailed popup** - Large popup with activity log and configuration (opens on click)
 - 🎯 **Click activation** - Press Pause to activate current agent
 - 🔄 **Agent switching** - Press Ctrl+Pause to switch agents (updates mini popup)
-- ⚙️ **Per-agent configuration** - Each agent has independent Context Folder and Focus File settings
+- ⚙️ **Per-agent configuration** - Each agent has independent Context Folder, Focus File, and Allowed Inputs settings
 - 📋 **Clipboard integration** - Automatic copy/paste
 - 🤖 **3 specialized agents** - Prompt Assistant, Diagnostic, Implementation
 - 🎨 **Visual feedback** - Color-coded agent icons
 - 💾 **Persistent configuration** - Settings saved in JSON, maintained across sessions
+- 🎯 **Multiple input types** - Text selection, file upload, clipboard image, screenshot
 
 ### Popup System
 
@@ -31,7 +32,7 @@ Multi-agent system with dual popup interface - mini indicator always visible, de
 - Size: 550x450 pixels
 - Two tabs:
   - **📋 Activity**: Real-time activity log
-  - **⚙️ Config**: Per-agent configuration settings
+  - **⚙️ Config**: Per-agent configuration settings (Context Folder, Focus File, Output Mode, Allowed Inputs)
 - Opens: When clicking mini popup
 - Closes: Via X button
 
@@ -49,11 +50,22 @@ Multi-agent system with dual popup interface - mini indicator always visible, de
    - Agent uses this file for additional context
    - Optional: Leave empty if not needed
 
+3. **Output Mode** (NEW)
+   - How the agent delivers results
+   - Options: Auto, Pure Clipboard, Rich Clipboard, File, Interactive Editor
+   - Default: Auto (agent decides best output)
+
+4. **Allowed Inputs** (NEW)
+   - Which input types the agent accepts
+   - Options: Text Selection, File Upload, Clipboard Image, Screenshot
+   - Default: All inputs enabled
+   - Customize per agent (e.g., Diagnostic Agent can use screenshots, Prompt Assistant only text)
+
 **How it works:**
 - Settings are **per-agent** (Diagnostic Agent can have different config than Prompt Assistant)
 - Configurations persist in `C:\.agent_click\config\agent_config.json`
 - When you switch agents (Ctrl+Pause), the config tab shows that agent's specific settings
-- Agent receives context_folder and focus_file when processing
+- Agent receives context_folder, focus_file, and input filtering when processing
 
 ## Available Agents
 
@@ -103,6 +115,51 @@ Input: "Add validation for special characters in password"
 Output: Production-ready code with file paths and exact changes
 ```
 
+## Input Types
+
+The AgentClick system supports **multiple input types** for maximum flexibility:
+
+### 1. ✅ Text Selection (Default)
+- **How:** Select text anywhere → Copy (Ctrl+C) → Press Pause
+- **Use case:** Standard text processing
+- **Works in:** Any application with copy functionality
+- **Example:** Select code in VSCode, copy, press Pause
+
+### 2. 📎 File Upload (NEW)
+- **How:** Drag file to mini popup → Auto-processes
+- **Use case:** Processing entire files
+- **Supported:** Text files, code files, JSON, YAML, etc.
+- **Example:** Drag `config.json` to mini popup for analysis
+
+### 3. 🖼️ Clipboard Image (NEW)
+- **How:** Copy image (Ctrl+C) → Press Pause
+- **Use case:** Visual analysis, UI debugging, screenshot processing
+- **Works in:** Browser, file explorer, screenshot tools
+- **Example:** Copy error screenshot, press Pause for diagnosis
+
+### 4. 📸 Screenshot (NEW)
+- **How:** Press Ctrl+Shift+Pause
+- **Use case:** Capture current screen for analysis
+- **Captures:** Entire screen or active window
+- **Example:** Debug UI issue by taking screenshot
+
+### Input Type Priority (Auto-Detection)
+
+When you press Pause, the system automatically detects the best available input:
+1. **Text Selection** - If text in clipboard (most common)
+2. **File Upload** - If file was dragged to mini popup
+3. **Clipboard Image** - If image in clipboard
+4. **Screenshot** - Only when explicitly triggered (Ctrl+Shift+Pause)
+
+### Per-Agent Input Filtering
+
+Each agent can be configured to accept only specific input types:
+- **Prompt Assistant** 🔧: Text only (recommended)
+- **Diagnostic Agent** 🔍: All inputs (including screenshots)
+- **Implementation Agent** 💻: Text + Files (code analysis)
+
+Configure this in the **Config tab** under "Allowed Input Types".
+
 ## Installation
 
 ### Install Astral UV
@@ -128,12 +185,23 @@ uv run agent_click.py
 - Shows current agent icon (🔍 Diagnostic Agent initially)
 - All agents load with their saved configurations
 
-**To process text:**
+**To process with text input:**
 1. **Select text** in any application
 2. **Copy text** (Ctrl+C) to clipboard
 3. **Press Pause** to process with current agent
 4. **Result automatically copied** to clipboard
 5. **Paste result** (Ctrl+V) where needed
+
+**To process with file upload (NEW):**
+1. **Drag file** to mini popup (bottom-right)
+2. File is automatically loaded and processed
+3. Result is delivered according to Output Mode setting
+
+**To process with image/screenshot (NEW):**
+1. **Copy image** to clipboard (Ctrl+C on any image)
+2. **Press Pause** to analyze the image
+3. OR press **Ctrl+Shift+Pause** to take screenshot
+4. Agent receives image path for visual analysis
 
 **To configure agents:**
 1. **Click the mini popup** (bottom-right)
@@ -142,6 +210,8 @@ uv run agent_click.py
 4. **Configure for current agent:**
    - Click "📁 Browse" to select Context Folder
    - Click "📄 Browse" to select Focus File
+   - Select Output Mode from dropdown
+   - Check/uncheck Allowed Input Types
 5. **Click "💾 Save Configuration"**
 6. **Settings persist** - will be loaded next time you use this agent
 
@@ -171,6 +241,8 @@ uv run agent_click.py
 **Tab 2: ⚙️ Config**
 - Context Folder field + Browse button
 - Focus File field + Browse button
+- Output Mode dropdown
+- Allowed Input Types checkboxes (Text, File, Image, Screenshot)
 - Save Configuration button
 - Info box explaining each setting
 
@@ -192,8 +264,16 @@ C:\.agent_click\
 ├── core/                       # Core system components
 │   ├── __init__.py
 │   ├── system.py               # Main coordinator
-│   ├── click_processor.py      # Keyboard shortcuts (Pause, Ctrl+Pause)
-│   └── selection_manager.py    # Clipboard operations
+│   ├── click_processor.py      # Keyboard shortcuts (Pause, Ctrl+Pause, Ctrl+Shift+Pause)
+│   ├── selection_manager.py    # Clipboard operations
+│   ├── input_manager.py        # Input strategy manager (NEW)
+│   ├── input_strategy.py       # Input strategy base classes (NEW)
+│   └── input_strategies/       # Input type implementations (NEW)
+│       ├── __init__.py
+│       ├── text_selection_strategy.py
+│       ├── file_upload_strategy.py
+│       ├── clipboard_image_strategy.py
+│       └── screenshot_strategy.py
 │
 ├── agents/                     # Agent implementations
 │   ├── __init__.py
@@ -321,13 +401,46 @@ When processing with config:
 
 | Hotkey | Action | Description |
 |--------|--------|-------------|
-| **Pause** | Activate agent | Process selected text with current agent |
+| **Pause** | Activate agent | Process input (auto-detects best available input type) |
 | **Ctrl+Pause** | Switch agent | Cycle to next agent (🔍→💻→🔧→🔍) |
+| **Ctrl+Shift+Pause** | Screenshot | Take screenshot for analysis (NEW) |
+| **Drag file to mini popup** | File upload | Load and process file (NEW) |
 | **Click mini popup** | Open details | Open large popup with activity + config |
 
 ## Workflow Examples
 
-### Example 1: Configure and Use Prompt Assistant
+### Example 1: Use File Upload for Code Analysis (NEW)
+
+```
+1. Start system
+2. Switch to Diagnostic Agent (Ctrl+Pause until 🔍 shows)
+3. Drag file: C:\my-project\buggy_function.py
+4. System auto-processes file
+5. Result: Detailed analysis of the entire file!
+```
+
+### Example 2: Screenshot for UI Debugging (NEW)
+
+```
+1. Find UI bug in your app
+2. Press Ctrl+Shift+Pause (screenshot)
+3. System captures screen
+4. Diagnostic Agent analyzes screenshot
+5. Result: Visual diagnosis + suggestions
+```
+
+### Example 3: Configure Input Types per Agent (NEW)
+
+```
+1. Open Config tab for Prompt Assistant (🔧)
+2. Uncheck: File Upload, Clipboard Image, Screenshot
+3. Check: Text Selection only
+4. Save Configuration
+5. Now Prompt Assistant only accepts text input!
+   (Prevents accidental image/file processing)
+```
+
+### Example 4: Configure and Use Prompt Assistant
 
 ```
 1. Start system
@@ -483,11 +596,23 @@ MIT
 
 ## Version
 
-**Version:** 1.0
-**Date:** 2025-12-27
+**Version:** 1.1
+**Date:** 2025-12-30
 **Author:** Generated with Claude Code SDK + Astral UV + PyQt6
 
 ## Changelog
+
+### v1.1 (2025-12-30) - Multiple Input Types
+- ✨ Multiple input types support (Text, File, Image, Screenshot)
+- ✨ File upload via drag & drop to mini popup
+- ✨ Clipboard image processing
+- ✨ Screenshot capture (Ctrl+Shift+Pause)
+- ✨ Per-agent input filtering (Allowed Inputs configuration)
+- ✨ Output Mode configuration (Auto, Pure, Rich, File, Editor)
+- ✨ Strategy Pattern for input handling
+- ✨ Input auto-detection with priority system
+- ✨ Visual feedback for drag & drop
+- ✨ Enhanced configuration UI with checkboxes
 
 ### v1.0 (2025-12-27) - Initial Release
 - ✨ Dual popup system (mini + detailed)

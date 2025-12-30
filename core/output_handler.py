@@ -18,14 +18,16 @@ logger = setup_logger('OutputHandler')
 class OutputHandler:
     """Handles output based on configured mode."""
 
-    def __init__(self, selection_manager: SelectionManager):
+    def __init__(self, selection_manager: SelectionManager, system_signals=None):
         """Initialize output handler.
 
         Args:
             selection_manager: Selection manager for clipboard operations
+            system_signals: Optional SystemSignals for thread-safe GUI operations
         """
         self.selection_manager = selection_manager
         self.logger = logger
+        self.system_signals = system_signals
 
 
     def handle(self, result: AgentResult, context_folder: Optional[str] = None) -> bool:
@@ -62,6 +64,10 @@ class OutputHandler:
             # INTERACTIVE_EDITOR: preview and edit
             elif mode == OutputMode.INTERACTIVE_EDITOR:
                 return self._handle_interactive(result, context_folder)
+
+            # PASTE_TEXT: paste at cursor
+            elif mode == OutputMode.PASTE_TEXT:
+                return self._handle_paste_text(result)
 
             else:
                 self.logger.warning(f"Unknown mode: {mode}, defaulting to AUTO")
@@ -166,6 +172,18 @@ class OutputHandler:
 
     def _handle_interactive(self, result: AgentResult, context_folder: Optional[str]) -> bool:
         """Open interactive editor for preview and editing."""
+        # THREAD-SAFE: If system_signals available, emit signal to create dialog in main thread
+        if self.system_signals:
+            self.logger.info("Emitting signal to open interactive editor in main thread")
+            self.system_signals.show_interactive_editor_signal.emit(result, context_folder)
+            return True  # Return immediately - actual processing happens in slot
+        else:
+            # Fallback: Create dialog directly (not thread-safe, but maintains backward compatibility)
+            self.logger.warning("No system_signals provided - opening interactive editor in current thread (may not be thread-safe)")
+            return self._open_interactive_editor_direct(result, context_folder)
+
+    def _open_interactive_editor_direct(self, result: AgentResult, context_folder: Optional[str]) -> bool:
+        """Open interactive editor directly in current thread (NOT thread-safe for Qt UI)."""
         try:
             # Create dialog (non-blocking)
             dialog = InteractiveEditorDialog(result, context_folder)
@@ -190,3 +208,40 @@ class OutputHandler:
         except Exception as e:
             self.logger.error(f"❌ Error in interactive editor: {e}", exc_info=True)
             return False
+
+
+    def _handle_paste_text(self, result: AgentResult) -> bool:
+        """Paste text at current cursor insertion point.
+
+        This method copies text to clipboard and simulates Ctrl+V to paste
+        at the current cursor location (works in any application).
+        """
+        import time
+        import pywinauto.keyboard
+        from pywinauto import keyboard
+
+        content = result.get_pure_content()
+
+        try:
+            # First copy to clipboard
+            if not self.selection_manager.copy_to_clipboard(content):
+                self.logger.error("❌ Failed to copy to clipboard for paste")
+                return False
+
+            self.logger.info(f"✅ Content copied to clipboard, simulating paste...")
+
+            # Give a small delay to ensure clipboard is ready
+            time.sleep(0.1)
+
+            # Simulate Ctrl+V to paste at cursor location
+            # This works in any application where the cursor is focused
+            keyboard.send_keys('^v')  # ^ represents Ctrl key
+
+            self.logger.info(f"✅ Pasted text at cursor ({len(content)} chars)")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"❌ Failed to paste text: {e}", exc_info=True)
+            # Fallback: just copy to clipboard and let user paste manually
+            self.logger.info("📋 Content copied to clipboard (paste manually with Ctrl+V)")
+            return True
