@@ -11,6 +11,8 @@ from agents.output_modes import AgentResult
 from core.click_processor import ClickProcessor
 from core.selection_manager import SelectionManager
 from core.output_handler import OutputHandler
+from core.input_manager import InputManager
+from core.input_strategy import InputType, InputContent
 from ui.popup_window import PopupWindow
 from ui.mini_popup import MiniPopupWidget
 from config.agent_config import AgentConfigManager
@@ -44,7 +46,8 @@ class AgentClickSystem:
         self.signals.log_message_signal.connect(self._log_in_main_thread)
 
         # Initialize components
-        self.selection_manager = SelectionManager()
+        self.input_manager = InputManager()  # NOVO: Gerenciador de múltiplos inputs
+        self.selection_manager = SelectionManager()  # Mantido para compatibilidade
         self.click_processor = ClickProcessor()
         self.agent_registry = AgentRegistry()
         self.config_manager = AgentConfigManager()
@@ -56,6 +59,7 @@ class AgentClickSystem:
         # Create mini popup (always visible)
         self.mini_popup: Optional[MiniPopupWidget] = MiniPopupWidget(initial_agent)
         self.mini_popup.clicked.connect(self._on_mini_popup_clicked)
+        self.mini_popup.file_dropped.connect(self._on_file_dropped)  # NOVO: Drag & drop
         self.mini_popup.show()
 
         # Large popup (shown only when clicked)
@@ -64,12 +68,15 @@ class AgentClickSystem:
         # Register callbacks
         self.click_processor.register_pause_handler(self._on_pause_pressed)
         self.click_processor.register_switch_handler(self._on_switch_pressed)
+        self.click_processor.register_screenshot_handler(self._on_screenshot_pressed)  # NOVO: Screenshot
 
         logger.info("AgentClick System initialized successfully")
         logger.info(f"Available agents: {list(self.agent_registry.agents.keys())}")
         logger.info("Press Pause to activate current agent")
         logger.info("Press Ctrl+Pause to switch to next agent")
+        logger.info("Press Ctrl+Shift+Pause to take screenshot")  # NOVO
         logger.info("Click mini popup to open detailed view")
+        logger.info(f"\n{self.input_manager.get_status_summary()}")  # NOVO
 
     def _on_pause_pressed(self) -> None:
         """Handle Pause key - activate current agent (no popup)."""
@@ -80,12 +87,24 @@ class AgentClickSystem:
 
         logger.info(f"Activating agent: {current_agent.metadata.name}")
 
-        # Get selected text
-        selected_text = self.selection_manager.get_selected_text()
-        if not selected_text:
-            logger.warning("No text selected")
-            # Optionally show a brief notification in mini popup
+        # NOVO: Usar InputManager para capturar input (auto-detect)
+        input_content = self.input_manager.capture_input()
+
+        if not input_content:
+            logger.warning("No input available")
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    "⚠️  No input available",
+                    "warning"
+                )
             return
+
+        # Log input type
+        input_type = input_content.input_type
+        logger.info(f"Input type: {input_type.value}")
+
+        # Get text for agent
+        selected_text = input_content.get_text_for_agent()
 
         # Get agent configuration
         agent_name = current_agent.metadata.name
@@ -95,8 +114,9 @@ class AgentClickSystem:
 
         logger.info(f"Processing with {current_agent.metadata.name}...")
         logger.info(f"Output mode: {output_mode}")
-        if context_folder or focus_file:
-            logger.info(f"Using config - Folder: {context_folder}, File: {focus_file}")
+
+        # Pass image path if available
+        image_path = input_content.image_path
 
         # Process with agent (this happens in keyboard thread)
         try:
@@ -104,12 +124,18 @@ class AgentClickSystem:
                 selected_text,
                 context_folder,
                 focus_file,
-                output_mode
+                output_mode,
+                image_path=image_path  # NOVO: Pass image path
             )
             self._handle_result(result, current_agent)
         except Exception as e:
             error_msg = f"Error processing: {str(e)}"
             logger.error(error_msg)
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    f"❌ {error_msg}",
+                    "error"
+                )
 
     def _on_switch_pressed(self) -> None:
         """Handle Ctrl+Pause - switch to next agent."""
@@ -125,6 +151,114 @@ class AgentClickSystem:
                 self.signals.log_message_signal.emit(
                     f"🔄 Switched to {next_agent.metadata.name}",
                     "info"
+                )
+
+    def _on_file_dropped(self, file_path: str) -> None:
+        """Handle file dropped on mini popup.
+
+        Args:
+            file_path: Path to dropped file
+        """
+        from pathlib import Path
+
+        logger.info(f"File dropped: {file_path}")
+
+        # Configure file upload
+        self.input_manager.set_file_upload(file_path)
+
+        # Show notification in large popup if open
+        if self.large_popup:
+            self.signals.log_message_signal.emit(
+                f"📎 File loaded: {Path(file_path).name}",
+                "info"
+            )
+
+        # Auto-process after file drop
+        logger.info("Auto-processing dropped file...")
+        self._process_input_with_current_agent(InputType.FILE_UPLOAD)
+
+    def _on_screenshot_pressed(self) -> None:
+        """Handle Ctrl+Shift+Pause - take screenshot."""
+        logger.info("Screenshot hotkey pressed")
+
+        # Take screenshot
+        input_content = self.input_manager.take_screenshot()
+
+        if input_content:
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    f"📸 Screenshot captured",
+                    "info"
+                )
+
+            # Auto-process screenshot
+            self._process_input_with_current_agent(InputType.SCREENSHOT)
+        else:
+            logger.error("Failed to capture screenshot")
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    "❌ Failed to capture screenshot",
+                    "error"
+                )
+
+    def _process_input_with_current_agent(self, input_type: InputType) -> None:
+        """Process input with current agent.
+
+        Args:
+            input_type: Type of input to process
+        """
+        current_agent = self.agent_registry.get_current_agent()
+        if not current_agent:
+            logger.warning("No agents available")
+            return
+
+        logger.info(f"Activating agent: {current_agent.metadata.name}")
+
+        # Capture input
+        input_content = self.input_manager.capture_input(preferred_type=input_type)
+
+        if not input_content:
+            logger.warning(f"No input available for type: {input_type.value}")
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    f"⚠️  No input available",
+                    "warning"
+                )
+            return
+
+        # Get text for agent
+        selected_text = input_content.get_text_for_agent()
+
+        # Get agent configuration
+        agent_name = current_agent.metadata.name
+        context_folder = self.config_manager.get_context_folder(agent_name)
+        focus_file = self.config_manager.get_focus_file(agent_name)
+        output_mode = self.config_manager.get_output_mode(agent_name)
+
+        logger.info(f"Processing with {current_agent.metadata.name}...")
+        logger.info(f"Input type: {input_type.value}")
+        logger.info(f"Output mode: {output_mode}")
+
+        # Pass image path if available
+        image_path = input_content.image_path
+
+        # Process with agent
+        try:
+            result = current_agent.process(
+                selected_text,
+                context_folder,
+                focus_file,
+                output_mode,
+                image_path=image_path  # NOVO: Pass image path
+            )
+            self._handle_result(result, current_agent)
+        except Exception as e:
+            error_msg = f"Error processing: {str(e)}"
+            logger.error(error_msg)
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    f"❌ {error_msg}",
+                    "error"
                 )
 
     def _on_mini_popup_clicked(self) -> None:

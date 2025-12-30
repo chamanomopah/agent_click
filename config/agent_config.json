@@ -1,10 +1,12 @@
 {
   "Diagnostic Agent": {
     "context_folder": "C:/.agent_click",
-    "focus_file": "C:/.agent_click/agent_click.py"
+    "focus_file": "C:/.agent_click/agent_click.py",
+    "output_mode": "FILE"
   },
   "Implementation Agent": {
     "context_folder": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure",
-    "focus_file": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure/README.md"
+    "focus_file": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure/README.md",
+    "output_mode": "AUTO"
   }
 }

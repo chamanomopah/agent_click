@@ -44,7 +44,7 @@ class BaseAgent(ABC):
         """
         pass
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO"):
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None):
         """Process text with this agent.
 
         Args:
@@ -52,6 +52,7 @@ class BaseAgent(ABC):
             context_folder: Optional context folder path
             focus_file: Optional focus file path
             output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
+            image_path: NOVO - Optional image path for visual analysis
 
         Returns:
             AgentResult with content and metadata
@@ -61,6 +62,10 @@ class BaseAgent(ABC):
         self.logger.info(f"Processing with {self.metadata.name}")
         self.logger.debug(f"Input text: {text[:100]}...")
         self.logger.info(f"Output mode: {output_mode}")
+
+        # NOVO: Log se tiver imagem
+        if image_path:
+            self.logger.info(f"Image provided: {image_path}")
 
         if context_folder:
             self.logger.info(f"Context folder: {context_folder}")
@@ -72,8 +77,8 @@ class BaseAgent(ABC):
             system_prompt = self.get_system_prompt(text, context_folder, focus_file)
             options = create_sdk_options(system_prompt)
 
-            # Build prompt with context
-            prompt = self._build_prompt(text, context_folder, focus_file)
+            # Build prompt with context (NOVO: Pass image_path)
+            prompt = self._build_prompt(text, context_folder, focus_file, image_path)
 
             # Query Claude SDK
             result_text = self._query_sdk(prompt, options)
@@ -93,7 +98,8 @@ class BaseAgent(ABC):
                 metadata={
                     "agent": self.metadata.name,
                     "context_folder": context_folder,
-                    "focus_file": focus_file
+                    "focus_file": focus_file,
+                    "image_path": image_path  # NOVO: Include in metadata
                 },
                 raw_thoughts=raw_thoughts,
                 suggested_filename=suggested_filename
@@ -160,13 +166,14 @@ class BaseAgent(ABC):
 
         return None
 
-    def _build_prompt(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None) -> str:
+    def _build_prompt(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, image_path: Optional[str] = None) -> str:
         """Build prompt for Claude SDK.
 
         Args:
             text: Input text
             context_folder: Optional context folder
             focus_file: Optional focus file
+            image_path: NOVO - Optional image path
 
         Returns:
             Formatted prompt
@@ -185,9 +192,16 @@ class BaseAgent(ABC):
 
             prompt_parts.append("")  # Empty line
 
+        # NOVO: Add image information if available
+        if image_path:
+            prompt_parts.append("VISUAL CONTEXT:")
+            prompt_parts.append(f"• Image attached: {image_path}")
+            prompt_parts.append(f"• Use this image for visual analysis if needed")
+            prompt_parts.append("")  # Empty line
+
         # Add the main task
         prompt_parts.append("TASK:")
-        prompt_parts.append(f"Process the following text:\n{text}")
+        prompt_parts.append(f"Process the following:\n{text}")
         prompt_parts.append("\nProvide only the result, no explanations.")
 
         return "\n".join(prompt_parts)

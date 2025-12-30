@@ -2,7 +2,7 @@
 
 from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QCursor, QFont
+from PyQt6.QtGui import QCursor, QFont, QDragEnterEvent, QDropEvent
 from agents.base_agent import BaseAgent
 from utils.logger import setup_logger
 
@@ -13,6 +13,7 @@ class MiniPopupWidget(QWidget):
     """Small, always-visible popup showing current agent icon."""
 
     clicked = pyqtSignal()  # Signal when clicked
+    file_dropped = pyqtSignal(str)  # NOVO: Signal when file dropped
 
     def __init__(self, initial_agent: BaseAgent):
         """Initialize mini popup.
@@ -25,7 +26,11 @@ class MiniPopupWidget(QWidget):
         self.logger = setup_logger('MiniPopup')
 
         self._setup_ui()
-        self.logger.info("Mini popup initialized")
+
+        # NOVO: Enable drag & drop
+        self.setAcceptDrops(True)
+
+        self.logger.info("Mini popup initialized with drag & drop support")
 
     def _setup_ui(self):
         """Setup mini popup UI."""
@@ -127,3 +132,89 @@ class MiniPopupWidget(QWidget):
             }
         """ % self.current_agent.metadata.color)
         super().leaveEvent(event)
+
+    # NOVO: Métodos de Drag & Drop
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle drag enter event.
+
+        Called when user drags something over the mini popup.
+
+        Args:
+            event: Drag enter event
+        """
+        from PyQt6.QtCore import QMimeData
+
+        mime_data = event.mimeData()
+        if mime_data.hasUrls():
+            # Accept the drag event
+            event.acceptProposedAction()
+            self.logger.debug("File dragged over mini popup")
+
+            # Visual feedback - slightly enlarge
+            self.setFixedSize(70, 70)
+            self.icon_label.setStyleSheet("""
+                QLabel {
+                    font-size: 38px;
+                    background-color: %s;
+                    color: #ffffff;
+                    border-radius: 35px;
+                    border: 3px solid #0078d4;
+                }
+            """ % self.current_agent.metadata.color)
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        """Handle drag leave event.
+
+        Called when user drags something away from mini popup.
+
+        Args:
+            event: Drag leave event
+        """
+        # Reset to normal size
+        self.setFixedSize(60, 60)
+        self.icon_label.setStyleSheet("""
+            QLabel {
+                font-size: 32px;
+                background-color: %s;
+                color: #ffffff;
+                border-radius: 30px;
+            }
+        """ % self.current_agent.metadata.color)
+
+    def dropEvent(self, event: QDropEvent):
+        """Handle drop event.
+
+        Called when user drops file on mini popup.
+
+        Args:
+            event: Drop event
+        """
+        from PyQt6.QtCore import QMimeData
+
+        mime_data = event.mimeData()
+
+        if mime_data.hasUrls():
+            # Get first file from the list
+            files = [u.toLocalFile() for u in mime_data.urls()]
+            if files:
+                file_path = files[0]
+                self.logger.info(f"File dropped on mini popup: {file_path}")
+
+                # Emit signal
+                self.file_dropped.emit(file_path)
+
+                # Reset appearance
+                self.setFixedSize(60, 60)
+                self.icon_label.setStyleSheet("""
+                    QLabel {
+                        font-size: 32px;
+                        background-color: %s;
+                        color: #ffffff;
+                        border-radius: 30px;
+                    }
+                """ % self.current_agent.metadata.color)
+
+        event.acceptProposedAction()
