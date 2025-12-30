@@ -15,6 +15,13 @@ class AgentSettings:
     context_folder: Optional[str] = None
     focus_file: Optional[str] = None
     output_mode: str = "AUTO"
+    allowed_inputs: list[str] = None  # NOVO: List of allowed input types
+
+    def __post_init__(self):
+        """Initialize allowed_inputs with defaults if not provided."""
+        if self.allowed_inputs is None:
+            # Default: all input types allowed
+            self.allowed_inputs = ["text_selection", "file_upload", "clipboard_image", "screenshot"]
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -26,7 +33,8 @@ class AgentSettings:
         return cls(
             context_folder=data.get('context_folder'),
             focus_file=data.get('focus_file'),
-            output_mode=data.get('output_mode', 'AUTO')
+            output_mode=data.get('output_mode', 'AUTO'),
+            allowed_inputs=data.get('allowed_inputs', ["text_selection", "file_upload", "clipboard_image", "screenshot"])
         )
 
 
@@ -193,3 +201,71 @@ class AgentConfigManager:
         """
         settings = self.get_settings(agent_name)
         return settings.output_mode
+
+    # NOVO: Métodos para gerenciar inputs permitidos
+
+    def get_allowed_inputs(self, agent_name: str) -> list[str]:
+        """Get allowed input types for an agent.
+
+        Args:
+            agent_name: Name of the agent
+
+        Returns:
+            List of allowed input types (e.g., ["text_selection", "file_upload"])
+        """
+        settings = self.get_settings(agent_name)
+        return settings.allowed_inputs
+
+    def set_allowed_inputs(self, agent_name: str, allowed_inputs: list[str]) -> None:
+        """Set allowed input types for an agent.
+
+        Args:
+            agent_name: Name of the agent
+            allowed_inputs: List of allowed input types
+                           Options: "text_selection", "file_upload", "clipboard_image", "screenshot"
+        """
+        from core.input_strategy import InputType
+
+        # Validate input types
+        valid_types = [t.value for t in InputType]
+        for input_type in allowed_inputs:
+            if input_type not in valid_types:
+                raise ValueError(f"Invalid input type: {input_type}. Must be one of: {valid_types}")
+
+        settings = self.get_settings(agent_name)
+        settings.allowed_inputs = allowed_inputs
+        self._save()
+        logger.info(f"Set allowed inputs for {agent_name}: {allowed_inputs}")
+
+    def is_input_allowed(self, agent_name: str, input_type: str) -> bool:
+        """Check if an input type is allowed for an agent.
+
+        Args:
+            agent_name: Name of the agent
+            input_type: Input type to check (e.g., "text_selection")
+
+        Returns:
+            True if input type is allowed
+        """
+        settings = self.get_settings(agent_name)
+        return input_type in settings.allowed_inputs
+
+    def toggle_input(self, agent_name: str, input_type: str) -> None:
+        """Toggle an input type on/off for an agent.
+
+        Args:
+            agent_name: Name of the agent
+            input_type: Input type to toggle
+        """
+        settings = self.get_settings(agent_name)
+
+        if input_type in settings.allowed_inputs:
+            # Remove if present
+            settings.allowed_inputs = [i for i in settings.allowed_inputs if i != input_type]
+            logger.info(f"Disabled input '{input_type}' for {agent_name}")
+        else:
+            # Add if not present
+            settings.allowed_inputs.append(input_type)
+            logger.info(f"Enabled input '{input_type}' for {agent_name}")
+
+        self._save()

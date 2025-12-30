@@ -2,11 +2,23 @@
   "Diagnostic Agent": {
     "context_folder": "C:/.agent_click",
     "focus_file": "C:/.agent_click/agent_click.py",
-    "output_mode": "FILE"
+    "output_mode": "FILE",
+    "allowed_inputs": [
+      "text_selection",
+      "file_upload",
+      "clipboard_image",
+      "screenshot"
+    ]
   },
   "Implementation Agent": {
     "context_folder": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure",
     "focus_file": "C:/Users/Lofrey/Downloads/Personal_AI_Infrastructure/README.md",
-    "output_mode": "AUTO"
+    "output_mode": "AUTO",
+    "allowed_inputs": [
+      "text_selection",
+      "file_upload",
+      "clipboard_image",
+      "screenshot"
+    ]
   }
 }

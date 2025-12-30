@@ -5,7 +5,7 @@ Minimalist popup showing agent status and activity log.
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton,
-    QLineEdit, QHBoxLayout, QFileDialog, QTabWidget, QGroupBox, QFormLayout, QComboBox
+    QLineEdit, QHBoxLayout, QFileDialog, QTabWidget, QGroupBox, QFormLayout, QComboBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QTextCursor
@@ -302,6 +302,131 @@ class PopupWindow(QWidget):
 
         config_form.addRow(output_mode_label, self.output_mode_combo)
 
+        # NOVO: Allowed Inputs Section
+        allowed_inputs_group = QGroupBox("Allowed Input Types")
+        allowed_inputs_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 12px;
+                font-weight: bold;
+                color: #333333;
+                border: 2px solid #0078d4;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+            }
+        """)
+
+        inputs_layout = QVBoxLayout()
+        inputs_layout.setSpacing(8)
+
+        # Text Selection Checkbox
+        self.text_selection_cb = QCheckBox("✅ Text Selection (clipboard)")
+        self.text_selection_cb.setStyleSheet("""
+            QCheckBox {
+                font-size: 11px;
+                color: #333333;
+                spacing: 5px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #107c10;
+                border: 2px solid #107c10;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: white;
+                border: 2px solid #cccccc;
+                border-radius: 3px;
+            }
+        """)
+        inputs_layout.addWidget(self.text_selection_cb)
+
+        # File Upload Checkbox
+        self.file_upload_cb = QCheckBox("📎 File Upload (drag & drop)")
+        self.file_upload_cb.setStyleSheet("""
+            QCheckBox {
+                font-size: 11px;
+                color: #333333;
+                spacing: 5px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #107c10;
+                border: 2px solid #107c10;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: white;
+                border: 2px solid #cccccc;
+                border-radius: 3px;
+            }
+        """)
+        inputs_layout.addWidget(self.file_upload_cb)
+
+        # Clipboard Image Checkbox
+        self.clipboard_image_cb = QCheckBox("🖼️  Clipboard Image")
+        self.clipboard_image_cb.setStyleSheet("""
+            QCheckBox {
+                font-size: 11px;
+                color: #333333;
+                spacing: 5px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #107c10;
+                border: 2px solid #107c10;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: white;
+                border: 2px solid #cccccc;
+                border-radius: 3px;
+            }
+        """)
+        inputs_layout.addWidget(self.clipboard_image_cb)
+
+        # Screenshot Checkbox
+        self.screenshot_cb = QCheckBox("📸 Screenshot (Ctrl+Shift+Pause)")
+        self.screenshot_cb.setStyleSheet("""
+            QCheckBox {
+                font-size: 11px;
+                color: #333333;
+                spacing: 5px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #107c10;
+                border: 2px solid #107c10;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: white;
+                border: 2px solid #cccccc;
+                border-radius: 3px;
+            }
+        """)
+        inputs_layout.addWidget(self.screenshot_cb)
+
+        allowed_inputs_group.setLayout(inputs_layout)
+        config_form.addRow(allowed_inputs_group)
+
         config_group.setLayout(config_form)
         config_layout.addWidget(config_group)
 
@@ -310,13 +435,19 @@ class PopupWindow(QWidget):
             "💡 These settings configure how the agent processes:\n"
             "• Context Folder: Project folder the agent can work in\n"
             "• Focus File: Specific file that provides project context\n"
-            "• Output Mode: How the agent delivers results\n\n"
+            "• Output Mode: How the agent delivers results\n"
+            "• Allowed Inputs: Which input types the agent accepts\n\n"
             "📋 Output Modes:\n"
             "  🤖 Auto: Agent decides best output\n"
             "  📋 Pure: Raw content to clipboard\n"
             "  📋 Rich: Formatted content with reasoning\n"
             "  💾 File: Save to project folder\n"
-            "  ✏️ Editor: Preview & edit before output"
+            "  ✏️ Editor: Preview & edit before output\n\n"
+            "🎯 Input Types:\n"
+            "  ✅ Text: Select text & press Pause\n"
+            "  📎 File: Drag file to mini popup\n"
+            "  🖼️  Image: Copy image to clipboard\n"
+            "  📸 Screenshot: Press Ctrl+Shift+Pause"
         )
         info_label.setStyleSheet("""
             QLabel {
@@ -394,6 +525,13 @@ class PopupWindow(QWidget):
             if mode_index >= 0:
                 self.output_mode_combo.setCurrentIndex(mode_index)
 
+        # NOVO: Load allowed inputs
+        allowed_inputs = settings.allowed_inputs
+        self.text_selection_cb.setChecked("text_selection" in allowed_inputs)
+        self.file_upload_cb.setChecked("file_upload" in allowed_inputs)
+        self.clipboard_image_cb.setChecked("clipboard_image" in allowed_inputs)
+        self.screenshot_cb.setChecked("screenshot" in allowed_inputs)
+
         self.logger.info(f"Loaded config for {self.current_agent.metadata.name}")
 
     def _save_config(self):
@@ -402,10 +540,22 @@ class PopupWindow(QWidget):
         focus_file = self.focus_file_edit.text().strip() or None
         output_mode = self.output_mode_combo.currentData()
 
+        # NOVO: Collect allowed inputs
+        allowed_inputs = []
+        if self.text_selection_cb.isChecked():
+            allowed_inputs.append("text_selection")
+        if self.file_upload_cb.isChecked():
+            allowed_inputs.append("file_upload")
+        if self.clipboard_image_cb.isChecked():
+            allowed_inputs.append("clipboard_image")
+        if self.screenshot_cb.isChecked():
+            allowed_inputs.append("screenshot")
+
         settings = AgentSettings(
             context_folder=context_folder,
             focus_file=focus_file,
-            output_mode=output_mode
+            output_mode=output_mode,
+            allowed_inputs=allowed_inputs  # NOVO
         )
 
         self.config_manager.update_settings(

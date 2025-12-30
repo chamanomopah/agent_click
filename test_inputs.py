@@ -152,6 +152,88 @@ def test_auto_detect():
         print("❌ No input available")
 
 
+def test_allowed_inputs_filter():
+    """Test filtering by allowed inputs."""
+    print("\n" + "="*60)
+    print("TEST 6: Filter by Allowed Inputs")
+    print("="*60)
+
+    manager = InputManager()
+
+    # Copy text to clipboard
+    import pyperclip
+    test_text = "Test text for filtering"
+    pyperclip.copy(test_text)
+    print(f"✅ Text copied to clipboard")
+
+    # Test 1: Allow only text_selection
+    print("\nTest 6a: Allow only text_selection")
+    content = manager.capture_input(allowed_inputs=["text_selection"])
+    if content and content.input_type == InputType.TEXT_SELECTION:
+        print(f"✅ Captured with filter: {content.input_type.value}")
+    else:
+        print("❌ Failed to capture with filter")
+
+    # Test 2: Allow only file_upload (should fail since no file configured)
+    print("\nTest 6b: Allow only file_upload (no file configured)")
+    content = manager.capture_input(allowed_inputs=["file_upload"])
+    if content is None:
+        print("✅ Correctly returned None (no file available)")
+    else:
+        print(f"❌ Unexpectedly captured: {content.input_type.value}")
+
+    # Test 3: Auto-detect with multiple allowed
+    print("\nTest 6c: Auto-detect with multiple allowed")
+    content = manager.capture_input(allowed_inputs=["text_selection", "file_upload"])
+    if content:
+        print(f"✅ Auto-detected: {content.input_type.value}")
+    else:
+        print("❌ Failed to auto-detect")
+
+
+def test_config_integration():
+    """Test integration with AgentConfigManager."""
+    print("\n" + "="*60)
+    print("TEST 7: AgentConfigManager Integration")
+    print("="*60)
+
+    from config.agent_config import AgentConfigManager
+
+    config_manager = AgentConfigManager()
+
+    # Test getting/setting allowed inputs
+    print("\nTest 7a: Get allowed inputs for agent")
+    allowed = config_manager.get_allowed_inputs("Diagnostic Agent")
+    print(f"✅ Allowed inputs for Diagnostic Agent: {allowed}")
+
+    print("\nTest 7b: Set custom allowed inputs")
+    config_manager.set_allowed_inputs(
+        "Diagnostic Agent",
+        ["text_selection", "file_upload"]
+    )
+    allowed = config_manager.get_allowed_inputs("Diagnostic Agent")
+    print(f"✅ Updated allowed inputs: {allowed}")
+
+    print("\nTest 7c: Check if specific input is allowed")
+    is_allowed = config_manager.is_input_allowed("Diagnostic Agent", "text_selection")
+    print(f"✅ text_selection allowed: {is_allowed}")
+
+    is_allowed = config_manager.is_input_allowed("Diagnostic Agent", "screenshot")
+    print(f"✅ screenshot allowed: {is_allowed}")
+
+    print("\nTest 7d: Toggle input")
+    config_manager.toggle_input("Diagnostic Agent", "screenshot")
+    allowed = config_manager.get_allowed_inputs("Diagnostic Agent")
+    print(f"✅ After toggle screenshot: {allowed}")
+
+    # Restore defaults
+    config_manager.set_allowed_inputs(
+        "Diagnostic Agent",
+        ["text_selection", "file_upload", "clipboard_image", "screenshot"]
+    )
+    print("\n✅ Restored defaults")
+
+
 def main():
     """Run all tests."""
     print("\n" + "="*60)
@@ -163,6 +245,8 @@ def main():
     test_clipboard_image()
     # test_screenshot()  # Uncomment to test screenshot
     test_auto_detect()
+    test_allowed_inputs_filter()
+    test_config_integration()
 
     print("\n" + "="*60)
     print("Tests completed!")

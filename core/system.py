@@ -87,8 +87,12 @@ class AgentClickSystem:
 
         logger.info(f"Activating agent: {current_agent.metadata.name}")
 
-        # NOVO: Usar InputManager para capturar input (auto-detect)
-        input_content = self.input_manager.capture_input()
+        # Get agent configuration
+        agent_name = current_agent.metadata.name
+        allowed_inputs = self.config_manager.get_allowed_inputs(agent_name)  # NOVO
+
+        # NOVO: Usar InputManager para capturar input (auto-detect com filtro)
+        input_content = self.input_manager.capture_input(allowed_inputs=allowed_inputs)
 
         if not input_content:
             logger.warning("No input available")
@@ -107,7 +111,6 @@ class AgentClickSystem:
         selected_text = input_content.get_text_for_agent()
 
         # Get agent configuration
-        agent_name = current_agent.metadata.name
         context_folder = self.config_manager.get_context_folder(agent_name)
         focus_file = self.config_manager.get_focus_file(agent_name)
         output_mode = self.config_manager.get_output_mode(agent_name)
@@ -214,8 +217,25 @@ class AgentClickSystem:
 
         logger.info(f"Activating agent: {current_agent.metadata.name}")
 
+        # Get agent configuration
+        agent_name = current_agent.metadata.name
+        allowed_inputs = self.config_manager.get_allowed_inputs(agent_name)  # NOVO
+
+        # NOVO: Check if input type is allowed
+        if input_type.value not in allowed_inputs:
+            logger.warning(f"Input type {input_type.value} not allowed for {agent_name}")
+            if self.large_popup:
+                self.signals.log_message_signal.emit(
+                    f"⚠️  Input type '{input_type.value}' not allowed for this agent",
+                    "warning"
+                )
+            return
+
         # Capture input
-        input_content = self.input_manager.capture_input(preferred_type=input_type)
+        input_content = self.input_manager.capture_input(
+            preferred_type=input_type,
+            allowed_inputs=allowed_inputs  # NOVO: Pass allowed inputs
+        )
 
         if not input_content:
             logger.warning(f"No input available for type: {input_type.value}")
@@ -230,7 +250,6 @@ class AgentClickSystem:
         selected_text = input_content.get_text_for_agent()
 
         # Get agent configuration
-        agent_name = current_agent.metadata.name
         context_folder = self.config_manager.get_context_folder(agent_name)
         focus_file = self.config_manager.get_focus_file(agent_name)
         output_mode = self.config_manager.get_output_mode(agent_name)

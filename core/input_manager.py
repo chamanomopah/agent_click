@@ -45,13 +45,15 @@ class InputManager:
     def capture_input(
         self,
         preferred_type: Optional[InputType] = None,
-        fallback: bool = True
+        fallback: bool = True,
+        allowed_inputs: Optional[list[str]] = None  # NOVO: Filter by allowed inputs
     ) -> Optional[InputContent]:
         """Capture input using best available strategy.
 
         Args:
             preferred_type: Optional preferred input type to use first
             fallback: If True and preferred_type fails, try other strategies
+            allowed_inputs: NOVO - Optional list of allowed input types to filter
 
         Returns:
             InputContent or None if no input available
@@ -60,9 +62,15 @@ class InputManager:
             - If preferred_type specified: tries that strategy first
             - If fallback is True and preferred fails: tries other strategies
             - If no preferred_type: auto-detects best available input
+            - NOVO: If allowed_inputs specified, only consider those types
         """
         # If preferred type specified, try that first
         if preferred_type:
+            # NOVO: Check if preferred type is allowed
+            if allowed_inputs and preferred_type.value not in allowed_inputs:
+                self.logger.warning(f"Preferred input type {preferred_type.value} not in allowed inputs")
+                return None
+
             content = self._try_strategy_by_type(preferred_type)
             if content:
                 self.active_strategy = self._get_strategy_by_type(preferred_type)
@@ -78,6 +86,11 @@ class InputManager:
             InputType.FILE_UPLOAD,
             InputType.CLIPBOARD_IMAGE,
         ]
+
+        # NOVO: Filter by allowed inputs if specified
+        if allowed_inputs:
+            priority_order = [t for t in priority_order if t.value in allowed_inputs]
+            self.logger.debug(f"Filtered priority order by allowed inputs: {[t.value for t in priority_order]}")
 
         for input_type in priority_order:
             content = self._try_strategy_by_type(input_type)
