@@ -203,6 +203,28 @@ class PopupWindow(QWidget):
         """)
         log_layout.addWidget(self.log_text)
 
+        # Clear Log button
+        clear_log_btn = QPushButton("🗑️ Clear Log")
+        clear_log_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: #ffffff;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+            QPushButton:pressed {
+                background-color: #4e5456;
+            }
+        """)
+        clear_log_btn.clicked.connect(self._clear_log)
+        log_layout.addWidget(clear_log_btn)
+
         # Add stretch to push log_text to top
         log_layout.addStretch()
 
@@ -378,6 +400,34 @@ class PopupWindow(QWidget):
 
         config_form.addRow(input_label, self.input_combo)
 
+        # Verbose Logging checkbox
+        self.verbose_logging_checkbox = QCheckBox("Enable Verbose Logging")
+        self.verbose_logging_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 11px;
+                color: #333333;
+                padding: 5px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #0078d4;
+                border: 2px solid #0078d4;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: #ffffff;
+                border: 2px solid #cccccc;
+                border-radius: 3px;
+            }
+        """)
+        self.verbose_logging_checkbox.setToolTip(
+            "Show real-time logs of Claude's tool usage during processing"
+        )
+        config_form.addRow("", self.verbose_logging_checkbox)
+
         config_group.setLayout(config_form)
         config_layout.addWidget(config_group)
 
@@ -459,6 +509,9 @@ class PopupWindow(QWidget):
             if default_index >= 0:
                 self.input_combo.setCurrentIndex(default_index)
 
+        # Load verbose_logging setting
+        self.verbose_logging_checkbox.setChecked(settings.verbose_logging)
+
         self.logger.info(f"Loaded config for {self.current_agent.metadata.name}")
 
     def _save_config(self):
@@ -471,11 +524,15 @@ class PopupWindow(QWidget):
         selected_input = self.input_combo.currentData()
         allowed_inputs = [selected_input]  # Store as single-item list for backward compatibility
 
+        # Get verbose_logging setting
+        verbose_logging = self.verbose_logging_checkbox.isChecked()
+
         settings = AgentSettings(
             context_folder=context_folder,
             focus_file=focus_file,
             output_mode=output_mode,
-            allowed_inputs=allowed_inputs
+            allowed_inputs=allowed_inputs,
+            verbose_logging=verbose_logging
         )
 
         self.config_manager.update_settings(
@@ -559,6 +616,12 @@ class PopupWindow(QWidget):
         """
         from datetime import datetime
         return datetime.now().strftime("%H:%M:%S")
+
+    def _clear_log(self) -> None:
+        """Clear the activity log."""
+        self.log_text.clear()
+        self.log("✨ Log cleared", "info")
+        self.logger.debug("Activity log cleared")
 
     def closeEvent(self, event):
         """Handle window close event."""

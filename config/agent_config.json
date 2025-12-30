@@ -1,12 +1,12 @@
 {
   "Prompt Assistant": {
-    "context_folder": null,
-    "focus_file": null,
+    "context_folder": "C:/.agent_click",
+    "focus_file": "C:/.agent_click/README.md",
     "output_mode": "PASTE_TEXT",
     "allowed_inputs": [
       "selected_text"
     ],
-    "verbose_logging": false
+    "verbose_logging": true
   },
   "TAC Chore Planner": {
     "context_folder": "C:/.agent_click",
@@ -15,7 +15,7 @@
     "allowed_inputs": [
       "selected_text"
     ],
-    "verbose_logging": false
+    "verbose_logging": true
   },
   "TAC Feature Planner": {
     "context_folder": "C:/.agent_click",
@@ -24,7 +24,7 @@
     "allowed_inputs": [
       "selected_text"
     ],
-    "verbose_logging": false
+    "verbose_logging": true
   },
   "TAC Implementer": {
     "context_folder": "C:/.agent_click",
@@ -33,18 +33,15 @@
     "allowed_inputs": [
       "vscode_active_file"
     ],
-    "verbose_logging": false
+    "verbose_logging": true
   },
   "TAC Bug Planner": {
-    "context_folder": null,
-    "focus_file": null,
+    "context_folder": "C:/.agent_click",
+    "focus_file": "C:/.agent_click/README.md",
     "output_mode": "AUTO",
     "allowed_inputs": [
-      "text_selection",
-      "file_upload",
-      "clipboard_image",
-      "screenshot"
+      "text_selection"
     ],
-    "verbose_logging": false
+    "verbose_logging": true
   }
 }

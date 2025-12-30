@@ -44,7 +44,7 @@ class BaseAgent(ABC):
         """
         pass
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None):
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None, verbose_logging: bool = False, log_callback: Optional[callable] = None):
         """Process text with this agent.
 
         Args:
@@ -53,6 +53,8 @@ class BaseAgent(ABC):
             focus_file: Optional focus file path
             output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
             image_path: NOVO - Optional image path for visual analysis
+            verbose_logging: Whether to enable verbose SDK logging
+            log_callback: Optional callback function for verbose log messages
 
         Returns:
             AgentResult with content and metadata
@@ -80,8 +82,8 @@ class BaseAgent(ABC):
             # Build prompt with context (NOVO: Pass image_path)
             prompt = self._build_prompt(text, context_folder, focus_file, image_path)
 
-            # Query Claude SDK
-            result_text = self._query_sdk(prompt, options)
+            # Query Claude SDK with verbose logging support
+            result_text = self._query_sdk(prompt, options, verbose_logging=verbose_logging, log_callback=log_callback)
 
             # Parse output to extract thoughts and content (if formatted)
             content, raw_thoughts = self._parse_output(result_text)
@@ -206,12 +208,14 @@ class BaseAgent(ABC):
 
         return "\n".join(prompt_parts)
 
-    def _query_sdk(self, prompt: str, options: ClaudeAgentOptions) -> str:
+    def _query_sdk(self, prompt: str, options: ClaudeAgentOptions, verbose_logging: bool = False, log_callback: Optional[callable] = None) -> str:
         """Query Claude SDK.
 
         Args:
             prompt: Prompt to send
             options: SDK options
+            verbose_logging: Whether to enable verbose logging
+            log_callback: Optional callback for verbose log messages
 
         Returns:
             Response text
@@ -222,11 +226,30 @@ class BaseAgent(ABC):
             import asyncio
 
             async def run_query():
-                async for message in query(prompt=prompt, options=options):
-                    if hasattr(message, 'content'):
-                        for block in message.content:
-                            if hasattr(block, 'text'):
-                                result_parts.append(block.text)
+                # Create the query generator
+                query_gen = query(prompt=prompt, options=options)
+
+                # Use verbose wrapper if enabled
+                if verbose_logging:
+                    from agents.sdk_logger import create_verbose_wrapper
+                    wrapper = create_verbose_wrapper(
+                        query_gen,
+                        log_callback=log_callback,
+                        enabled=True
+                    )
+                    # Use the wrapped query
+                    async for message in wrapper.wrapped_query():
+                        if hasattr(message, 'content'):
+                            for block in message.content:
+                                if hasattr(block, 'text'):
+                                    result_parts.append(block.text)
+                else:
+                    # Original behavior without verbose logging
+                    async for message in query_gen:
+                        if hasattr(message, 'content'):
+                            for block in message.content:
+                                if hasattr(block, 'text'):
+                                    result_parts.append(block.text)
 
             asyncio.run(run_query())
 

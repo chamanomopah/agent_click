@@ -123,6 +123,15 @@ class AgentClickSystem:
         # Pass image path if available
         image_path = input_content.image_path
 
+        # Get verbose logging setting
+        verbose_logging = self.config_manager.get_verbose_logging(agent_name)
+
+        # Create log callback for verbose logging
+        def verbose_log_callback(message: str):
+            """Callback to emit verbose log messages to GUI."""
+            if self.large_popup:
+                self.signals.log_message_signal.emit(message, "info")
+
         # Process with agent (this happens in keyboard thread)
         try:
             result = current_agent.process(
@@ -130,7 +139,9 @@ class AgentClickSystem:
                 context_folder,
                 focus_file,
                 output_mode,
-                image_path=image_path  # NOVO: Pass image path
+                image_path=image_path,  # NOVO: Pass image path
+                verbose_logging=verbose_logging,
+                log_callback=verbose_log_callback
             )
             self._handle_result(result, current_agent)
         except Exception as e:
@@ -274,6 +285,15 @@ class AgentClickSystem:
         # Pass image path if available
         image_path = input_content.image_path
 
+        # Get verbose logging setting
+        verbose_logging = self.config_manager.get_verbose_logging(agent_name)
+
+        # Create log callback for verbose logging
+        def verbose_log_callback(message: str):
+            """Callback to emit verbose log messages to GUI."""
+            if self.large_popup:
+                self.signals.log_message_signal.emit(message, "info")
+
         # Process with agent
         try:
             result = current_agent.process(
@@ -281,7 +301,9 @@ class AgentClickSystem:
                 context_folder,
                 focus_file,
                 output_mode,
-                image_path=image_path  # NOVO: Pass image path
+                image_path=image_path,  # NOVO: Pass image path
+                verbose_logging=verbose_logging,
+                log_callback=verbose_log_callback
             )
             self._handle_result(result, current_agent)
         except Exception as e:
