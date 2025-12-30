@@ -217,8 +217,7 @@ class OutputHandler:
         at the current cursor location (works in any application).
         """
         import time
-        import pywinauto.keyboard
-        from pywinauto import keyboard
+        import keyboard
 
         content = result.get_pure_content()
 
@@ -235,7 +234,7 @@ class OutputHandler:
 
             # Simulate Ctrl+V to paste at cursor location
             # This works in any application where the cursor is focused
-            keyboard.send_keys('^v')  # ^ represents Ctrl key
+            keyboard.press_and_release('ctrl+v')
 
             self.logger.info(f"✅ Pasted text at cursor ({len(content)} chars)")
             return True

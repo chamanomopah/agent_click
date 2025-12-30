@@ -13,7 +13,7 @@ Multi-agent system with dual popup interface, multiple input types (text, file, 
 - 🔄 **Agent switching** - Press Ctrl+Pause to switch agents (updates mini popup)
 - ⚙️ **Per-agent configuration** - Each agent has independent Context Folder, Focus File, and Allowed Inputs settings
 - 📋 **Clipboard integration** - Automatic copy/paste
-- 🤖 **3 specialized agents** - Prompt Assistant, Diagnostic, Implementation
+- 🤖 **Specialized agents** - Prompt Assistant for prompt refinement
 - 🎨 **Visual feedback** - Color-coded agent icons
 - 💾 **Persistent configuration** - Settings saved in JSON, maintained across sessions
 - 🎯 **Multiple input types** - Text selection, file upload, clipboard image, screenshot
@@ -59,17 +59,17 @@ Multi-agent system with dual popup interface, multiple input types (text, file, 
    - Which input types the agent accepts
    - Options: Text Selection, File Upload, Clipboard Image, Screenshot
    - Default: All inputs enabled
-   - Customize per agent (e.g., Diagnostic Agent can use screenshots, Prompt Assistant only text)
+   - Customize per agent (e.g., different inputs for different use cases)
 
 **How it works:**
-- Settings are **per-agent** (Diagnostic Agent can have different config than Prompt Assistant)
+- Settings are **per-agent** (each agent has independent configuration)
 - Configurations persist in `C:\.agent_click\config\agent_config.json`
 - When you switch agents (Ctrl+Pause), the config tab shows that agent's specific settings
 - Agent receives context_folder, focus_file, and input filtering when processing
 
 ## Available Agents
 
-### 1. Prompt Assistant 🔧
+### Prompt Assistant 🔧
 
 **Purpose:** Expands and refines user prompts with better structure and context.
 
@@ -85,34 +85,6 @@ With Configuration:
 - Focus File: C:\my-react-app\package.json
 
 Result: Prompt considers React project structure and dependencies!
-```
-
-### 2. Diagnostic Agent 🔍
-
-**Purpose:** Analyzes problems and provides detailed diagnosis with implementation plans.
-
-**Use when:** You need to understand and fix bugs or issues
-
-**Example:**
-```
-Input: "Bug: login fails with special characters"
-Output:
-- Root cause analysis
-- Impact assessment
-- Solution approaches
-- Step-by-step implementation plan
-```
-
-### 3. Implementation Agent 💻
-
-**Purpose:** Executes code implementations directly in project files.
-
-**Use when:** You need concrete code implementations
-
-**Example:**
-```
-Input: "Add validation for special characters in password"
-Output: Production-ready code with file paths and exact changes
 ```
 
 ## Input Types
@@ -154,11 +126,9 @@ When you press Pause, the system automatically detects the best available input:
 ### Per-Agent Input Filtering
 
 Each agent can be configured to accept only specific input types:
-- **Prompt Assistant** 🔧: Text only (recommended)
-- **Diagnostic Agent** 🔍: All inputs (including screenshots)
-- **Implementation Agent** 💻: Text + Files (code analysis)
+- **Prompt Assistant** 🔧: All inputs available (text, file, image, screenshot)
 
-Configure this in the **Config tab** under "Allowed Input Types".
+Configure this in the **Config tab** under "Input" option.
 
 ## Installation
 
@@ -182,8 +152,8 @@ uv run agent_click.py
 
 **When system starts:**
 - Mini popup appears in bottom-right corner
-- Shows current agent icon (🔍 Diagnostic Agent initially)
-- All agents load with their saved configurations
+- Shows current agent icon (🔧 Prompt Assistant)
+- Agent loads with its saved configuration
 
 **To process with text input:**
 1. **Select text** in any application
@@ -280,8 +250,7 @@ C:\.agent_click\
 │   ├── base_agent.py           # Abstract base class
 │   ├── agent_registry.py       # Agent discovery and management
 │   ├── prompt_assistant_agent.py   # 🔧 Refines prompts
-│   ├── diagnostic_agent.py         # 🔍 Diagnoses problems
-│   └── implementation_agent.py     # 💻 Implements code
+│   └── output_modes.py         # Output mode definitions
 │
 ├── ui/                         # User interface
 │   ├── __init__.py
@@ -307,22 +276,12 @@ C:\.agent_click\
 
 **1. Each Agent Has Independent Settings:**
 ```
-Diagnostic Agent settings:
-{
-  "context_folder": "C:\\api-project",
-  "focus_file": "C:\\api-project\\api.py"
-}
-
 Prompt Assistant settings:
 {
-  "context_folder": "C:\\docs-project",
-  "focus_file": "C:\\docs-project\\guide.md"
-}
-
-Implementation Agent settings:
-{
-  "context_folder": null,
-  "focus_file": null
+  "context_folder": "C:\\my-project",
+  "focus_file": "C:\\my-project\\main.py",
+  "output_mode": "CLIPBOARD_PURE",
+  "allowed_inputs": ["text_selection"]
 }
 ```
 
@@ -332,8 +291,8 @@ User selects text: "add error handling"
 User presses Pause
 
 System:
-1. Detects current agent: "Diagnostic Agent"
-2. Loads Diagnostic Agent's config
+1. Detects current agent: "Prompt Assistant"
+2. Loads agent's config
 3. Passes context_folder and focus_file to agent
 4. Agent uses config to customize processing
 5. Result considers project context!
@@ -356,17 +315,11 @@ When processing with config:
 **Format:**
 ```json
 {
-  "Diagnostic Agent": {
-    "context_folder": "C:\\my-project\\src",
-    "focus_file": "C:\\my-project\\README.md"
-  },
   "Prompt Assistant": {
-    "context_folder": "C:\\docs",
-    "focus_file": null
-  },
-  "Implementation Agent": {
-    "context_folder": null,
-    "focus_file": null
+    "context_folder": "C:\\my-project",
+    "focus_file": "C:\\my-project\\main.py",
+    "output_mode": "CLIPBOARD_PURE",
+    "allowed_inputs": ["text_selection"]
   }
 }
 ```
@@ -419,17 +372,7 @@ When processing with config:
 5. Result: Detailed analysis of the entire file!
 ```
 
-### Example 2: Screenshot for UI Debugging (NEW)
-
-```
-1. Find UI bug in your app
-2. Press Ctrl+Shift+Pause (screenshot)
-3. System captures screen
-4. Diagnostic Agent analyzes screenshot
-5. Result: Visual diagnosis + suggestions
-```
-
-### Example 3: Configure Input Types per Agent (NEW)
+### Example 2: Configure Input Types per Agent (NEW)
 
 ```
 1. Open Config tab for Prompt Assistant (🔧)
@@ -456,30 +399,6 @@ When processing with config:
 11. Press Pause
 12. Result: Detailed prompt considering React context!
 13. Paste where needed (Ctrl+V)
-```
-
-### Example 2: Multi-Agent Workflow
-
-```
-Scenario: Debugging API issue
-
-1. Configure Diagnostic Agent:
-   - Context Folder: C:\api-project
-   - Focus File: C:\api-project\api\auth.py
-
-2. Use Diagnostic Agent:
-   - Select: "401 error on POST /login"
-   - Press Pause (with Diagnostic Agent)
-   - Get: Root cause analysis + implementation plan
-
-3. Switch to Implementation Agent:
-   - Press Ctrl+Pause
-   - Configure same context folder
-   - Select the plan text
-   - Press Pause
-   - Get: Actual code implementation!
-
-4. Done! Both agents used same project context.
 ```
 
 ## Adding New Agents
@@ -616,10 +535,12 @@ MIT
 
 ### v1.0 (2025-12-27) - Initial Release
 - ✨ Dual popup system (mini + detailed)
-- ✨ 3 specialized agents (Prompt Assistant, Diagnostic, Implementation)
+- ✨ Prompt Assistant agent for prompt refinement
 - ✨ Per-agent configuration system
 - ✨ Context Folder and Focus File settings
 - ✨ Persistent configuration (JSON)
+- ✨ Multiple input types (text, file, image, screenshot)
+- ✨ Multiple output modes (clipboard, file, paste at cursor)
 - ✨ Global keyboard hook for reliable Ctrl+Pause detection
 - ✨ Tabbed interface (Activity + Config)
 - ✨ Independent settings per agent

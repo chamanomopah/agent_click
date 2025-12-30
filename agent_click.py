@@ -41,6 +41,9 @@ def main():
     # Create QApplication FIRST (required before any QWidget)
     app = QApplication(sys.argv)
 
+    # Initialize system variable to None to avoid UnboundLocalError
+    system = None
+
     try:
         # Create system
         system = AgentClickSystem()
@@ -50,16 +53,20 @@ def main():
         exit_code = app.exec()
 
         # Cleanup on exit
-        system.cleanup()
+        if system:
+            system.cleanup()
         logger.info(f"Exiting with code {exit_code}")
         sys.exit(exit_code)
 
     except KeyboardInterrupt:
         logger.info("Received interrupt signal")
-        system.cleanup()
+        if system:
+            system.cleanup()
         sys.exit(0)
     except Exception as e:
         logger.error(f"Fatal error: {e}", exc_info=True)
+        if system:
+            system.cleanup()
         sys.exit(1)
 
 

@@ -9,6 +9,21 @@ from utils.logger import setup_logger
 logger = setup_logger('AgentConfig')
 
 
+# Singleton instance
+_instance = None
+
+def get_config_manager() -> 'AgentConfigManager':
+    """Get the singleton instance of AgentConfigManager.
+
+    Returns:
+        The singleton AgentConfigManager instance
+    """
+    global _instance
+    if _instance is None:
+        _instance = AgentConfigManager()
+    return _instance
+
+
 @dataclass
 class AgentSettings:
     """Settings for a specific agent."""
@@ -39,14 +54,27 @@ class AgentSettings:
 
 
 class AgentConfigManager:
-    """Manages agent configuration with persistence."""
+    """Manages agent configuration with persistence (Singleton)."""
+
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, config_file: Optional[Path] = None):
+        """Create or return singleton instance."""
+        if cls._instance is None:
+            cls._instance = super(AgentConfigManager, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, config_file: Optional[Path] = None):
-        """Initialize config manager.
+        r"""Initialize config manager (only once due to singleton).
 
         Args:
             config_file: Path to config file (default: C:\.agent_click\config\agent_config.json)
         """
+        # Only initialize once
+        if AgentConfigManager._initialized:
+            return
+
         if config_file is None:
             config_dir = Path(__file__).parent.parent / 'config'
             config_dir.mkdir(exist_ok=True)
@@ -56,6 +84,7 @@ class AgentConfigManager:
         self.configs: dict[str, AgentSettings] = {}
         self._load()
         logger.info(f"Config manager initialized: {self.config_file}")
+        AgentConfigManager._initialized = True
 
     def _load(self) -> None:
         """Load configurations from file."""

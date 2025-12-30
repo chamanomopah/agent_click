@@ -44,9 +44,9 @@ class SelectedTextStrategy(InputStrategy):
             # Save current clipboard
             old_clipboard = self.selection_manager.get_selected_text()
 
-            # Simulate Ctrl+C to copy selected text
-            from pywinauto import keyboard
-            keyboard.send_keys('^c')  # ^ represents Ctrl key
+            # Simulate Ctrl+C to copy selected text using keyboard module
+            import keyboard
+            keyboard.press_and_release('ctrl+c')
 
             # Small delay to let clipboard update
             time.sleep(0.1)
@@ -79,16 +79,13 @@ class SelectedTextStrategy(InputStrategy):
     def is_available(self) -> bool:
         """Check if text is currently selected.
 
-        This is a best-effort check - we try to detect if something is selected
-        by attempting to capture it.
+        This is a non-destructive check - we always return True since we can't
+        detect if text is selected without actually capturing it (which would
+        interfere with the user's clipboard).
+
+        The actual availability will be determined when capture_input() is called.
 
         Returns:
-            True if text appears to be selected
+            True (always available to try)
         """
-        try:
-            # Try to capture - if we get text, something was selected
-            text = self.capture_input()
-            return text is not None and len(text.text.strip()) > 0 if text else False
-        except Exception as e:
-            self.logger.error(f"Error checking availability: {e}")
-            return False
+        return True
