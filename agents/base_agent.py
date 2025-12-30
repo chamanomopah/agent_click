@@ -77,7 +77,7 @@ class BaseAgent(ABC):
         try:
             # Create SDK options
             system_prompt = self.get_system_prompt(text, context_folder, focus_file)
-            options = create_sdk_options(system_prompt)
+            options = create_sdk_options(system_prompt, cwd=context_folder)
 
             # Build prompt with context (NOVO: Pass image_path)
             prompt = self._build_prompt(text, context_folder, focus_file, image_path)

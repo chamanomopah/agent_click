@@ -31,7 +31,7 @@ class AgentSettings:
     focus_file: Optional[str] = None
     output_mode: str = "AUTO"
     allowed_inputs: list[str] = None  # NOVO: List of allowed input types
-    verbose_logging: bool = False  # NOVO: Enable verbose SDK logging
+    verbose_logging: bool = True  # NOVO: Enable verbose SDK logging (always enabled by default)
 
     def __post_init__(self):
         """Initialize allowed_inputs with defaults if not provided."""
@@ -51,7 +51,7 @@ class AgentSettings:
             focus_file=data.get('focus_file'),
             output_mode=data.get('output_mode', 'AUTO'),
             allowed_inputs=data.get('allowed_inputs', ["text_selection", "selected_text", "vscode_active_file", "file_upload", "clipboard_image", "screenshot"]),
-            verbose_logging=data.get('verbose_logging', False)
+            verbose_logging=data.get('verbose_logging', True)
         )
 
 
@@ -308,19 +308,17 @@ class AgentConfigManager:
             agent_name: Name of the agent
 
         Returns:
-            True if verbose logging is enabled
+            Always True (verbose logging always enabled)
         """
-        settings = self.get_settings(agent_name)
-        return settings.verbose_logging
+        return True  # Always enabled
 
     def set_verbose_logging(self, agent_name: str, enabled: bool) -> None:
-        """Set verbose logging for an agent.
+        """Set verbose logging for an agent (no-op, always enabled).
 
         Args:
             agent_name: Name of the agent
-            enabled: Whether to enable verbose logging
+            enabled: Ignored (verbose logging always enabled)
         """
-        settings = self.get_settings(agent_name)
-        settings.verbose_logging = enabled
-        self._save()
-        logger.info(f"Set verbose logging for {agent_name}: {enabled}")
+        # Verbose logging is always enabled, ignore this setting
+        logger.debug(f"set_verbose_logging called for {agent_name} (ignored, always enabled)")
+        pass

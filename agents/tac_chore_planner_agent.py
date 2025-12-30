@@ -153,6 +153,8 @@ Your output will be saved directly to specs/*.md, so ensure it's complete and re
         Returns:
             Suggested filename in specs/ folder
         """
+        import re
+
         # Extract key words from task to create meaningful filename
         task_lower = task.lower()
 
@@ -163,6 +165,18 @@ Your output will be saved directly to specs/*.md, so ensure it's complete and re
         if words:
             # Take first 3-4 meaningful words and join with underscores
             filename = '_'.join(words[:4])
+
+            # Sanitize filename: remove invalid characters for Windows
+            # Invalid chars: < > : " / \ | ? *
+            filename = re.sub(r'[<>:"/\\|?*\[\]]', '', filename)
+
+            # Remove extra whitespace and underscores
+            filename = re.sub(r'[\s_]+', '_', filename).strip('_')
+
+            # Ensure filename is not empty after sanitization
+            if not filename:
+                return "specs/chore_plan.md"
+
             return f"specs/{filename}.md"
 
         return "specs/chore_plan.md"

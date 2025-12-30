@@ -38,7 +38,7 @@
   "TAC Bug Planner": {
     "context_folder": "C:/.agent_click",
     "focus_file": "C:/.agent_click/README.md",
-    "output_mode": "AUTO",
+    "output_mode": "FILE",
     "allowed_inputs": [
       "text_selection"
     ],
