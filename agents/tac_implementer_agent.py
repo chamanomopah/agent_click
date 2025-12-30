@@ -171,7 +171,7 @@ Your job is to implement that plan and report the completed work."""
         # But if needed, generate implementation report filename
         return "implementation_report.md"
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None, verbose_logging: bool = False, log_callback: Optional[callable] = None) -> str:
         """Process plan file and implement it.
 
         Args:
@@ -180,6 +180,8 @@ Your job is to implement that plan and report the completed work."""
             focus_file: Optional focus file
             output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
             image_path: Optional image path for visual analysis
+            verbose_logging: Whether to enable verbose SDK logging
+            log_callback: Optional callback function for verbose log messages
 
         Returns:
             Implementation completion report
@@ -201,5 +203,5 @@ Your job is to implement that plan and report the completed work."""
         else:
             self.logger.warning("Input doesn't appear to be a TAC plan file")
 
-        result = super().process(text, context_folder, focus_file, output_mode, image_path)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path, verbose_logging, log_callback)
         return result

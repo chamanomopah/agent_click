@@ -43,5 +43,19 @@
       "text_selection"
     ],
     "verbose_logging": true
+  },
+  "Agent Factory Agent": {
+    "context_folder": null,
+    "focus_file": null,
+    "output_mode": "AUTO",
+    "allowed_inputs": [
+      "text_selection",
+      "selected_text",
+      "vscode_active_file",
+      "file_upload",
+      "clipboard_image",
+      "screenshot"
+    ],
+    "verbose_logging": false
   }
 }

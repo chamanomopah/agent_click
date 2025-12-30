@@ -102,14 +102,25 @@ Output: C:\\.agent_click\\agents\\bug_finder_agent.py
 
     def process(self, text: str, context_folder: Optional[str] = None,
                focus_file: Optional[str] = None, output_mode: str = "AUTO",
-               image_path: Optional[str] = None):
-        """Process agent creation request."""
+               image_path: Optional[str] = None, verbose_logging: bool = False,
+               log_callback: Optional[callable] = None):
+        """Process agent creation request.
+
+        Args:
+            text: Agent description
+            context_folder: Optional context folder
+            focus_file: Optional focus file
+            output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
+            image_path: Optional image path for visual analysis
+            verbose_logging: Whether to enable verbose SDK logging
+            log_callback: Optional callback function for verbose log messages
+        """
         from agents.output_modes import AgentResult, OutputMode
 
         self.logger.info(f"Creating agent from description: {text[:50]}...")
 
         # Call base class to get the agent code
-        result = super().process(text, context_folder, focus_file, output_mode, image_path)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path, verbose_logging, log_callback)
 
         # Extract the file path from the result
         file_path = result.content.strip().split('\n')[0].strip()

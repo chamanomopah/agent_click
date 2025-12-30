@@ -61,7 +61,7 @@ The user's original input will be provided - transform it into an excellent prom
 
         return base_prompt
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None, verbose_logging: bool = False, log_callback: Optional[callable] = None) -> str:
         """Process text with prompt assistant.
 
         Args:
@@ -70,10 +70,12 @@ The user's original input will be provided - transform it into an excellent prom
             focus_file: Optional focus file
             output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
             image_path: Optional image path for visual analysis
+            verbose_logging: Whether to enable verbose SDK logging
+            log_callback: Optional callback function for verbose log messages
 
         Returns:
             Refined, expanded prompt
         """
         self.logger.info("Prompt Assistant: Refining prompt")
-        result = super().process(text, context_folder, focus_file, output_mode, image_path)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path, verbose_logging, log_callback)
         return result

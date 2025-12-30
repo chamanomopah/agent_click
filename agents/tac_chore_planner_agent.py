@@ -167,7 +167,7 @@ Your output will be saved directly to specs/*.md, so ensure it's complete and re
 
         return "specs/chore_plan.md"
 
-    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None) -> str:
+    def process(self, text: str, context_folder: Optional[str] = None, focus_file: Optional[str] = None, output_mode: str = "AUTO", image_path: Optional[str] = None, verbose_logging: bool = False, log_callback: Optional[callable] = None) -> str:
         """Process chore description and generate implementation plan.
 
         Args:
@@ -176,6 +176,8 @@ Your output will be saved directly to specs/*.md, so ensure it's complete and re
             focus_file: Optional focus file
             output_mode: Output mode (AUTO, CLIPBOARD_PURE, etc.)
             image_path: Optional image path for visual analysis
+            verbose_logging: Whether to enable verbose SDK logging
+            log_callback: Optional callback function for verbose log messages
 
         Returns:
             Detailed chore implementation plan
@@ -190,5 +192,5 @@ Your output will be saved directly to specs/*.md, so ensure it's complete and re
             if not specs_path.exists():
                 self.logger.warning(f"specs/ folder does not exist in {context_folder} - it will be created")
 
-        result = super().process(text, context_folder, focus_file, output_mode, image_path)
+        result = super().process(text, context_folder, focus_file, output_mode, image_path, verbose_logging, log_callback)
         return result
